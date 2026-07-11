@@ -64,9 +64,9 @@ export default function Providers() {
                 transition={{ type: 'spring', stiffness: 300, damping: 18 }}
                 style={{
                   width: 34, height: 34, borderRadius: '50%',
-                  background: 'linear-gradient(135deg,#ffb238,#ff8a1e)',
+                  background: 'linear-gradient(135deg,#2563EB,#14B8A6)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '12px', fontWeight: 700, color: '#07090e',
+                  fontSize: '12px', fontWeight: 700, color: '#ffffff',
                 }}
               >
                 {getInitials(r.user.name)}
@@ -185,7 +185,7 @@ export default function Providers() {
                     transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                     style={{
                       position: 'absolute', inset: 0,
-                      background: 'rgba(255,178,56,0.15)',
+                      background: 'rgba(37,99,235,0.15)',
                       border: '1px solid var(--amber)',
                       borderRadius: '20px',
                       zIndex: 0,

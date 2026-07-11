@@ -122,7 +122,7 @@ export default function Payments() {
               marginBottom: '24px',
             }}
           >
-            <StatsCard title="Total Revenue"  value={formatCurrency(stats.totalRevenue)}  icon={TrendingUp}  gradient="linear-gradient(135deg,#ffb238,#ff8a1e)" />
+            <StatsCard title="Total Revenue"  value={formatCurrency(stats.totalRevenue)}  icon={TrendingUp}  gradient="linear-gradient(135deg,#2563EB,#14B8A6)" />
             <StatsCard title="Net Revenue"    value={formatCurrency(stats.netRevenue)}    icon={CreditCard}  gradient="linear-gradient(135deg,#10b981,#059669)" />
             <StatsCard title="Total Refunded" value={formatCurrency(stats.totalRefunded)} icon={RefreshCw}   gradient="linear-gradient(135deg,#ef4444,#dc2626)" />
             <StatsCard title="Successful"     value={stats.successfulPayments}            icon={CheckCircle} gradient="linear-gradient(135deg,#4F46E5,#7C3AED)" />
@@ -155,7 +155,7 @@ export default function Payments() {
                     transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                     style={{
                       position: 'absolute', inset: 0,
-                      background: 'rgba(255,178,56,0.15)',
+                      background: 'rgba(37,99,235,0.15)',
                       border: '1px solid var(--amber)',
                       borderRadius: '20px',
                       zIndex: 0,

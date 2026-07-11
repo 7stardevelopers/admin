@@ -72,7 +72,7 @@ export default function Dashboard() {
       title: 'Total Revenue',
       value: isLoading ? '…' : formatCurrency(stats?.totalRevenue ?? 0),
       icon: TrendingUp,
-      gradient: 'linear-gradient(135deg,#ffb238,#ff8a1e)',
+      gradient: 'linear-gradient(135deg,#2563EB,#14B8A6)',
       trend: { value: 8, label: 'vs last month' },
     },
     {
@@ -104,13 +104,13 @@ export default function Dashboard() {
   ];
 
   const chartStyle: React.CSSProperties = {
-    background: 'rgba(7,9,14,0.50)',
-    border: '1px solid rgba(255,178,56,0.10)',
+    background: 'rgba(255,255,255,0.70)',
+    border: '1px solid rgba(37,99,235,0.14)',
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
     borderRadius: '18px',
     padding: '24px',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.3)',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 8px 32px rgba(15,23,42,0.10)',
   };
 
   const liveIndicator = (
@@ -167,20 +167,20 @@ export default function Dashboard() {
               <AreaChart data={last7} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#ffb238" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#ffb238" stopOpacity={0}   />
+                    <stop offset="5%"  stopColor="#2563EB" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0}   />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(237,241,246,0.06)" />
-                <XAxis dataKey="label" tick={{ fill: '#97a1ae', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#97a1ae', fontSize: 11 }} axisLine={false} tickLine={false}
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.08)" />
+                <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false}
                   tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
                 <Tooltip
-                  contentStyle={{ background: '#0c1018', border: '1px solid rgba(237,241,246,0.1)', borderRadius: '10px' }}
-                  labelStyle={{ color: '#edf1f6', fontSize: 12 }}
+                  contentStyle={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.10)', borderRadius: '10px' }}
+                  labelStyle={{ color: '#0f172a', fontSize: 12 }}
                   formatter={(v: number) => [formatCurrency(v), 'Revenue']}
                 />
-                <Area type="monotone" dataKey="revenue" stroke="#ffb238" strokeWidth={2}
+                <Area type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={2}
                   fill="url(#revGrad)" />
               </AreaChart>
             </ResponsiveContainer>
@@ -209,7 +209,7 @@ export default function Dashboard() {
                     formatter={(v) => <span style={{ color: 'var(--muted)', fontSize: 11 }}>{v}</span>}
                   />
                   <Tooltip
-                    contentStyle={{ background: '#0c1018', border: '1px solid rgba(237,241,246,0.1)', borderRadius: '10px' }}
+                    contentStyle={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.10)', borderRadius: '10px' }}
                     formatter={(v) => [v, '']}
                   />
                 </PieChart>

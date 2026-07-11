@@ -16,10 +16,10 @@ interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>
 
 const variantStyles: Record<Variant, React.CSSProperties> = {
   amber: {
-    background: 'linear-gradient(135deg, #ffb238 0%, #ff8a1e 100%)',
-    color: '#07090e',
+    background: 'linear-gradient(135deg, #2563EB 0%, #14B8A6 100%)',
+    color: '#ffffff',
     border: 'none',
-    boxShadow: '0 4px 14px rgba(255,138,30,0.25)',
+    boxShadow: '0 4px 14px rgba(37,99,235,0.25)',
   },
   glass: {
     background: 'var(--glass-bg)',
@@ -34,8 +34,8 @@ const variantStyles: Record<Variant, React.CSSProperties> = {
 };
 
 const variantHover: Record<Variant, any> = {
-  amber: { scale: 1.03, boxShadow: '0 8px 24px rgba(255,138,30,0.4)' },
-  glass: { scale: 1.02, background: 'rgba(255,178,56,0.08)' },
+  amber: { scale: 1.03, boxShadow: '0 8px 24px rgba(37,99,235,0.4)' },
+  glass: { scale: 1.02, background: 'rgba(37,99,235,0.08)' },
   danger: { scale: 1.02, background: 'rgba(239,68,68,0.18)' },
 };
 

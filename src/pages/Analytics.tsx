@@ -82,21 +82,21 @@ export default function Analytics() {
 
   // Extra-transparent so the amber line from the 3D world bleeds through.
   const chartCard: React.CSSProperties = {
-    background: 'rgba(7,9,14,0.45)',
-    border: '1px solid rgba(255,178,56,0.10)',
+    background: 'rgba(255,255,255,0.70)',
+    border: '1px solid rgba(37,99,235,0.14)',
     backdropFilter: 'blur(24px) saturate(1.6)',
     WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
     borderRadius: '18px',
     padding: '24px',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.3)',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 8px 32px rgba(15,23,42,0.10)',
   };
   const chartLabel: React.CSSProperties = {
     fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: 700,
     letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--amber)', marginBottom: '16px',
   };
   const tooltipStyle = {
-    contentStyle: { background: '#0c1018', border: '1px solid rgba(237,241,246,0.1)', borderRadius: '10px' },
-    labelStyle: { color: '#edf1f6', fontSize: 11 },
+    contentStyle: { background: '#ffffff', border: '1px solid rgba(15,23,42,0.10)', borderRadius: '10px' },
+    labelStyle: { color: '#0f172a', fontSize: 11 },
   };
 
   return (
@@ -112,7 +112,7 @@ export default function Analytics() {
           }}
         >
           <StatsCard title="Conversion Rate"     value={`${conversionRate}%`}         icon={Target}    gradient="linear-gradient(135deg,#4F46E5,#7C3AED)" />
-          <StatsCard title="Avg Booking Value"   value={formatCurrency(avgBookingValue)} icon={TrendingUp} gradient="linear-gradient(135deg,#ffb238,#ff8a1e)" />
+          <StatsCard title="Avg Booking Value"   value={formatCurrency(avgBookingValue)} icon={TrendingUp} gradient="linear-gradient(135deg,#2563EB,#14B8A6)" />
           <StatsCard title="Avg Rating"          value={String(avgRating)}              icon={Star}      gradient="linear-gradient(135deg,#10b981,#059669)" />
           <StatsCard title="Total Revenue"       value={formatCurrency(totalRevenue)}  icon={BarChart3} gradient="linear-gradient(135deg,#06b6d4,#0891b2)" />
         </StaggerList>
@@ -129,16 +129,16 @@ export default function Analytics() {
             <AreaChart data={last7Days} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#ffb238" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#ffb238" stopOpacity={0}    />
+                  <stop offset="5%"  stopColor="#2563EB" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="#2563EB" stopOpacity={0}    />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(237,241,246,0.06)" />
-              <XAxis dataKey="label" tick={{ fill: '#97a1ae', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#97a1ae', fontSize: 11 }} axisLine={false} tickLine={false}
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.08)" />
+              <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false}
                 tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
               <Tooltip {...tooltipStyle} formatter={(v: number) => [formatCurrency(v), 'Revenue']} />
-              <Area type="monotone" dataKey="revenue" stroke="#ffb238" strokeWidth={2} fill="url(#areaGrad)" />
+              <Area type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={2} fill="url(#areaGrad)" />
             </AreaChart>
           </ResponsiveContainer>
         </motion.div>
@@ -154,9 +154,9 @@ export default function Analytics() {
             <p style={chartLabel}>Booking Funnel</p>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={funnelData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(237,241,246,0.06)" />
-                <XAxis dataKey="label" tick={{ fill: '#97a1ae', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#97a1ae', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.08)" />
+                <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip {...tooltipStyle} />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                   {funnelData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
@@ -176,10 +176,10 @@ export default function Analytics() {
             {topServices.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={topServices} layout="vertical" margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(237,241,246,0.06)" horizontal={false} />
-                  <XAxis type="number" tick={{ fill: '#97a1ae', fontSize: 10 }} axisLine={false} tickLine={false}
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.08)" horizontal={false} />
+                  <XAxis type="number" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false}
                     tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-                  <YAxis dataKey="name" type="category" tick={{ fill: '#97a1ae', fontSize: 10 }} axisLine={false} tickLine={false} width={80} />
+                  <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} width={80} />
                   <Tooltip {...tooltipStyle} formatter={(v: number) => [formatCurrency(v), 'Revenue']} />
                   <Bar dataKey="revenue" radius={[0, 6, 6, 0]}>
                     {topServices.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}

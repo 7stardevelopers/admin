@@ -36,13 +36,13 @@ export default function ProviderDetail() {
   });
 
   const cardStyle: React.CSSProperties = {
-    background: 'rgba(7,9,14,0.55)',
-    border: '1px solid rgba(255,178,56,0.10)',
+    background: 'rgba(255,255,255,0.72)',
+    border: '1px solid rgba(37,99,235,0.14)',
     backdropFilter: 'blur(24px) saturate(1.6)',
     WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
     borderRadius: '18px',
     padding: '24px',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.3)',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 8px 32px rgba(15,23,42,0.10)',
   };
 
   if (isLoading) return (
@@ -98,17 +98,17 @@ export default function ProviderDetail() {
                     src={p.user.avatar}
                     whileHover={{ scale: 1.08, rotate: 2 }}
                     alt=""
-                    style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--amber)', margin: '0 auto', boxShadow: '0 0 24px rgba(255,178,56,0.25)' }}
+                    style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--amber)', margin: '0 auto', boxShadow: '0 0 24px rgba(37,99,235,0.25)' }}
                   />
                 : (
                   <motion.div
                     whileHover={{ scale: 1.08, rotate: 2 }}
                     style={{
                       width: 72, height: 72, borderRadius: '50%',
-                      background: 'linear-gradient(135deg,#ffb238,#ff8a1e)',
+                      background: 'linear-gradient(135deg,#2563EB,#14B8A6)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '24px', fontWeight: 800, color: '#07090e', margin: '0 auto',
-                      boxShadow: '0 0 24px rgba(255,178,56,0.4)',
+                      fontSize: '24px', fontWeight: 800, color: '#ffffff', margin: '0 auto',
+                      boxShadow: '0 0 24px rgba(37,99,235,0.4)',
                     }}
                   >
                     {getInitials(p.user?.name ?? 'U')}

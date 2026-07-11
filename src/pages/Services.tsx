@@ -40,8 +40,8 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
         style={{
           padding: '28px', width: '100%', maxWidth: '480px',
           maxHeight: '90vh', overflowY: 'auto',
-          background: 'rgba(12,16,24,0.92)',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
+          background: 'rgba(255,255,255,0.95)',
+          boxShadow: '0 24px 64px rgba(15,23,42,0.20), inset 0 1px 0 rgba(255,255,255,0.6)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
@@ -336,7 +336,7 @@ export default function Services() {
                     padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
                     cursor: 'pointer', border: 'none', textTransform: 'capitalize',
                     background: 'transparent',
-                    color: active ? '#07090e' : 'var(--muted)',
+                    color: active ? '#ffffff' : 'var(--muted)',
                     zIndex: 1,
                   }}
                 >
@@ -347,10 +347,10 @@ export default function Services() {
                       style={{
                         position: 'absolute',
                         inset: 0,
-                        background: 'linear-gradient(135deg,#ffb238,#ff8a1e)',
+                        background: 'linear-gradient(135deg,#2563EB,#14B8A6)',
                         borderRadius: '10px',
                         zIndex: -1,
-                        boxShadow: '0 4px 12px rgba(255,138,30,0.3)',
+                        boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
                       }}
                     />
                   )}

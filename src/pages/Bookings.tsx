@@ -116,7 +116,7 @@ export default function Bookings() {
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      background: 'rgba(255,178,56,0.15)',
+                      background: 'rgba(37,99,235,0.15)',
                       border: '1px solid var(--amber)',
                       borderRadius: '20px',
                       zIndex: 0,

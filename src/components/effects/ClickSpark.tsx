@@ -14,7 +14,7 @@ interface ClickSparkProps {
  */
 export function ClickSpark({
   children,
-  color = '#ffb238',
+  color = '#2563EB',
   count = 8,
   disabled,
 }: ClickSparkProps) {

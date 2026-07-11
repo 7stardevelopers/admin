@@ -38,10 +38,10 @@ export default function Users() {
             transition={{ type: 'spring', stiffness: 300, damping: 18 }}
             style={{
               width: 36, height: 36, borderRadius: '50%',
-              background: 'linear-gradient(135deg,#ffb238,#ff8a1e)',
+              background: 'linear-gradient(135deg,#2563EB,#14B8A6)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '12px', fontWeight: 700, color: '#07090e', flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(255,138,30,0.25)',
+              fontSize: '12px', fontWeight: 700, color: '#ffffff', flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(37,99,235,0.25)',
             }}
           >
             {getInitials(r.user?.name ?? 'U')}

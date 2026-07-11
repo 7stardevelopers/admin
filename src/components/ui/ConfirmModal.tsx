@@ -20,12 +20,12 @@ export function ConfirmModal({
   const confirmBg: Record<string, string> = {
     success: 'linear-gradient(135deg,#10b981,#059669)',
     danger:  'linear-gradient(135deg,#ef4444,#dc2626)',
-    amber:   'linear-gradient(135deg,#ffb238,#ff8a1e)',
+    amber:   'linear-gradient(135deg,#2563EB,#14B8A6)',
   };
   const confirmColor: Record<string, string> = {
     success: '#fff',
     danger:  '#fff',
-    amber:   '#07090e',
+    amber:   '#ffffff',
   };
 
   return (
@@ -56,7 +56,7 @@ export function ConfirmModal({
               width: '100%',
               maxWidth: '420px',
               boxShadow:
-                '0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)',
+                '0 24px 64px rgba(15,23,42,0.25), inset 0 1px 0 rgba(255,255,255,0.6)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -78,7 +78,7 @@ export function ConfirmModal({
             </p>
             <div style={{ display: 'flex', gap: '10px' }}>
               <motion.button
-                whileHover={{ scale: 1.02, background: 'rgba(255,178,56,0.08)' }}
+                whileHover={{ scale: 1.02, background: 'rgba(37,99,235,0.08)' }}
                 whileTap={{ scale: 0.97 }}
                 onClick={onCancel}
                 style={{
@@ -90,7 +90,7 @@ export function ConfirmModal({
                 Cancel
               </motion.button>
               <motion.button
-                whileHover={!isLoading ? { scale: 1.03, boxShadow: '0 8px 24px rgba(255,138,30,0.35)' } : undefined}
+                whileHover={!isLoading ? { scale: 1.03, boxShadow: '0 8px 24px rgba(37,99,235,0.35)' } : undefined}
                 whileTap={!isLoading ? { scale: 0.97 } : undefined}
                 onClick={onConfirm}
                 disabled={isLoading}

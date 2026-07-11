@@ -77,8 +77,8 @@ export default function Announcements() {
               whileHover={{ rotate: 8, scale: 1.08 }}
               style={{
                 width: 32, height: 32, borderRadius: '8px',
-                background: 'rgba(255,178,56,0.10)',
-                border: '1px solid rgba(255,178,56,0.25)',
+                background: 'rgba(37,99,235,0.10)',
+                border: '1px solid rgba(37,99,235,0.25)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
@@ -168,7 +168,7 @@ export default function Announcements() {
               return (
                 <motion.div
                   key={a.id}
-                  whileHover={{ y: -2, boxShadow: '0 12px 32px rgba(0,0,0,0.4)' }}
+                  whileHover={{ y: -2, boxShadow: '0 12px 32px rgba(15,23,42,0.14)' }}
                   className="glass-card"
                   style={{
                     padding: '16px 20px',

@@ -25,7 +25,7 @@ export function ShinyText({
       style={{
         display: 'inline-block',
         background:
-          'linear-gradient(90deg, #edf1f6 40%, #ffb238 50%, #fff8e7 55%, #edf1f6 60%)',
+          'linear-gradient(90deg, #0f172a 40%, #2563EB 50%, #60a5fa 55%, #0f172a 60%)',
         backgroundSize: '200% auto',
         WebkitBackgroundClip: 'text',
         backgroundClip: 'text',

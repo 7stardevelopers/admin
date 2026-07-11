@@ -24,7 +24,6 @@ import Analytics     from '@/pages/Analytics';
 import MapView       from '@/pages/MapView';
 
 import { VectrProvider, useVectr } from '@/context/VectrContext';
-import { VectrBackground } from '@/components/VectrBackground';
 
 /**
  * Switches the Vectr scene mode based on the current route.
@@ -72,8 +71,6 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <VectrProvider>
-      {/* The Three.js scene lives ONCE here, behind every route. */}
-      <VectrBackground />
       <BrowserRouter>
         <VectrRouteSync />
         <AnimatedRoutes />
