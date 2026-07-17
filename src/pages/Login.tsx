@@ -667,7 +667,7 @@ export default function Login() {
                     >
                       {loading
                         ? <Loader2 size={18} style={{ animation: 'ls-spin 0.7s linear infinite' }} />
-                        : <><span>Send OTP</span><ChevronRight size={16} /></>
+                        : <><span>Login</span><ChevronRight size={16} /></>
                       }
                     </motion.button>
                   </motion.div>
