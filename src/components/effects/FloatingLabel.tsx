@@ -61,7 +61,9 @@ export const FloatingLabel = React.forwardRef<any, Props>(function FloatingLabel
     (rest as any).onChange?.(e);
   };
 
-  const floated = focused || hasValue;
+  // Selects always render the current option's text, even when unselected,
+  // so the label must stay floated out of the way instead of centering over it.
+  const floated = as === 'select' || focused || hasValue;
 
   const wrapStyle: React.CSSProperties = {
     position: 'relative',

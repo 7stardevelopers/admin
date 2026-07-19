@@ -22,15 +22,16 @@ function CreatePlanModal({ onClose, onSuccess }: { onClose: () => void; onSucces
 
   const mutation = useMutation({
     mutationFn: (d: PlanForm) => subscriptionsApi.createPlan({
-      ...d,
+      name: d.name,
       price: Number(d.price),
-      bookingsIncluded: Number(d.bookingsIncluded),
-      discountPct: Number(d.discountPct),
+      bookings_included: Number(d.bookingsIncluded),
+      discount_pct: Number(d.discountPct),
+      features: d.description ? { description: d.description } : undefined,
     }),
+
     onSuccess: () => { onSuccess(); onClose(); },
     onError: (e: any) => setServerError(e.response?.data?.message ?? 'Failed to create plan'),
   });
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -206,13 +207,24 @@ export default function Subscriptions() {
     queryKey: ['subscription-plans'],
     queryFn: async () => {
       const res = await subscriptionsApi.getPlans();
-      return res.data.data ?? res.data;
+      const rows = res.data.data ?? res.data;
+      return (Array.isArray(rows) ? rows : []).map((r: any): SubscriptionPlan => ({
+        id: r.plan_id ?? r.id,
+        name: r.name,
+        price: r.price,
+        bookingsIncluded: r.bookings_included ?? r.bookingsIncluded,
+        discountPct: r.discount_pct ?? r.discountPct,
+        description: r.features?.description ?? r.description,
+        isActive: r.is_active ?? r.isActive,
+        subscriberCount: r.subscriberCount,
+        createdAt: r.created_at ?? r.createdAt,
+      }));
     },
   });
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      subscriptionsApi.updatePlan(id, { isActive }),
+      subscriptionsApi.updatePlan(id, { is_active: isActive }),
     onSettled: () => {
       setTogglingId(null);
       queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });

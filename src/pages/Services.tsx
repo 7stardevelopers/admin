@@ -14,6 +14,38 @@ import { formatCurrency } from '@/lib/utils';
 import type { Service, Category } from '@/types';
 import { Plus, Pencil, X, Clock } from 'lucide-react';
 
+// ── API adapters ─────────────────────────────────────────────────────────────
+// The backend returns snake_case fields (category_id, base_price, is_active…)
+// while the rest of the app is typed camelCase — normalize at the boundary
+// instead of chasing raw.category_id everywhere.
+function mapCategory(raw: any): Category {
+  return {
+    id: raw.id ?? raw.category_id,
+    name: raw.name,
+    icon: raw.icon,
+    description: raw.description,
+    isActive: raw.isActive ?? !!raw.is_active,
+    sortOrder: raw.sortOrder ?? raw.sort_order ?? 0,
+    _count: raw._count,
+  };
+}
+
+function mapService(raw: any, categoriesById: Map<string, Category>): Service {
+  const categoryId = raw.categoryId ?? raw.category_id;
+  return {
+    id: raw.id ?? raw.service_id,
+    categoryId,
+    name: raw.name,
+    description: raw.description,
+    image: raw.image ?? raw.image_url,
+    basePrice: raw.basePrice ?? raw.base_price ?? 0,
+    duration: raw.duration ?? raw.duration_minutes ?? 0,
+    isActive: raw.isActive ?? !!raw.is_active,
+    category: raw.category ?? (categoryId ? categoriesById.get(categoryId) : undefined),
+    _count: raw._count,
+  };
+}
+
 // ── Modal Shell ────────────────────────────────────────────────────────────
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
@@ -127,11 +159,24 @@ function ServiceFormFields({ register, errors, categories, defaults }: { registe
   );
 }
 
+// Backend persists snake_case columns (category_id, base_price, image_url…) —
+// translate the camelCase form values before sending them out.
+function toServicePayload(d: ServiceForm) {
+  return {
+    name: d.name,
+    category_id: d.categoryId,
+    base_price: Number(d.basePrice),
+    duration: Number(d.duration),
+    description: d.description,
+    image_url: d.image,
+  };
+}
+
 function AddServiceModal({ categories, onClose, onSuccess }: { categories: Category[]; onClose: () => void; onSuccess: () => void }) {
   const { register, handleSubmit, formState: { errors } } = useForm<ServiceForm>();
   const [serverError, setServerError] = useState('');
   const mutation = useMutation({
-    mutationFn: (d: ServiceForm) => servicesApi.createService({ ...d, basePrice: Number(d.basePrice), duration: Number(d.duration) }),
+    mutationFn: (d: ServiceForm) => servicesApi.createService(toServicePayload(d)),
     onSuccess: () => { onSuccess(); onClose(); },
     onError: (e: any) => setServerError(e.response?.data?.message ?? 'Failed to create'),
   });
@@ -149,7 +194,7 @@ function AddServiceModal({ categories, onClose, onSuccess }: { categories: Categ
 function EditServiceModal({ service, categories, onClose, onSuccess }: { service: Service; categories: Category[]; onClose: () => void; onSuccess: () => void }) {
   const defaults = {
     name: service.name,
-    categoryId: service.category?.id ?? '',
+    categoryId: service.categoryId ?? service.category?.id ?? '',
     basePrice: service.basePrice,
     duration: service.duration,
     description: service.description ?? '',
@@ -158,7 +203,7 @@ function EditServiceModal({ service, categories, onClose, onSuccess }: { service
   const { register, handleSubmit, formState: { errors } } = useForm<ServiceForm>({ defaultValues: defaults });
   const [serverError, setServerError] = useState('');
   const mutation = useMutation({
-    mutationFn: (d: ServiceForm) => servicesApi.updateService(service.id, { ...d, basePrice: Number(d.basePrice), duration: Number(d.duration) }),
+    mutationFn: (d: ServiceForm) => servicesApi.updateService(service.id, toServicePayload(d)),
     onSuccess: () => { onSuccess(); onClose(); },
     onError: (e: any) => setServerError(e.response?.data?.message ?? 'Failed to update'),
   });
@@ -179,7 +224,11 @@ function AddCategoryModal({ onClose, onSuccess }: { onClose: () => void; onSucce
   const { register, handleSubmit, formState: { errors } } = useForm<CategoryForm>();
   const [serverError, setServerError] = useState('');
   const mutation = useMutation({
-    mutationFn: (d: CategoryForm) => servicesApi.createCategory({ ...d, sortOrder: d.sortOrder ? Number(d.sortOrder) : 0 }),
+    mutationFn: (d: CategoryForm) => servicesApi.createCategory({
+      name: d.name,
+      icon: d.icon,
+      sort_order: d.sortOrder ? Number(d.sortOrder) : 0,
+    }),
     onSuccess: () => { onSuccess(); onClose(); },
     onError: (e: any) => setServerError(e.response?.data?.message ?? 'Failed to create'),
   });
@@ -210,21 +259,22 @@ export default function Services() {
 
   const { data: servicesData, isLoading: loadingServices } = useQuery({
     queryKey: ['services-admin'],
-    queryFn: async () => { const res = await servicesApi.getAll({ limit: 100, showAll: true }); return res.data.data; },
+    queryFn: async () => { const res = await servicesApi.getAll(); return res.data.data; },
   });
 
   const { data: catsData, isLoading: loadingCats } = useQuery({
     queryKey: ['categories'],
-    queryFn: async () => { const res = await servicesApi.getCategories({ showAll: true }); return res.data.data; },
+    queryFn: async () => { const res = await servicesApi.getCategories(); return res.data.data; },
   });
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => servicesApi.updateService(id, { isActive }),
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => servicesApi.updateService(id, { is_active: isActive }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['services-admin'] }),
   });
 
-  const services: Service[]   = servicesData?.services ?? servicesData ?? [];
-  const cats: Category[]      = catsData?.categories ?? catsData ?? [];
+  const cats: Category[] = (catsData?.categories ?? catsData ?? []).map(mapCategory);
+  const catsById = new Map(cats.map((c) => [c.id, c]));
+  const services: Service[] = (servicesData?.services ?? servicesData ?? []).map((r: any) => mapService(r, catsById));
 
   const serviceColumns = [
     {

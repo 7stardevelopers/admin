@@ -57,6 +57,8 @@ export function StatsCard({ title, value, icon: Icon, trend, gradient }: StatsCa
         position: 'relative',
         overflow: 'hidden',
         borderRadius: '18px',
+        height: '100%',
+        boxSizing: 'border-box',
       }}
     >
       {/* Ambient gradient glow blob */}

@@ -372,13 +372,10 @@ export default function Login() {
     setError(''); setLoading(true);
     try {
       await authApi.sendOtp(clean);
-    } catch {
-      // No live OTP backend required for dev — fall through to the bypass below.
+      setStep('otp');
+    } catch (err: any) {
+      setError(err.response?.data?.message ?? 'Failed to send OTP');
     } finally { setLoading(false); }
-    // Dev bypass: skip real OTP verification and go straight to the dashboard.
-    Cookies.set('admin_token', 'dev-bypass-token', { expires: 1 });
-    setUser({ name: 'Admin', phone: clean, role: 'ADMIN' });
-    navigate('/dashboard');
   };
 
   const handleVerifyOtp = async () => {
@@ -386,8 +383,15 @@ export default function Login() {
     setError(''); setLoading(true);
     try {
       const res = await authApi.login(phone.trim(), otp);
-      const { user, accessToken } = res.data.data;
-      Cookies.set('admin_token', accessToken, { expires: 1 });
+      const payload = res.data.data ?? res.data;
+      const { user } = payload;
+      const token = payload.access_token ?? payload.accessToken ?? payload.token ?? payload.jwt;
+      if (!token) {
+        console.error('Login response had no recognizable token field:', payload);
+        setError('Login succeeded but no auth token was returned — check console for the response shape.');
+        return;
+      }
+      Cookies.set('admin_token', token, { expires: 1 });
       setUser({ name: user.name, phone: user.phone, role: user.role });
       navigate('/dashboard');
     } catch (err: any) {
@@ -667,7 +671,7 @@ export default function Login() {
                     >
                       {loading
                         ? <Loader2 size={18} style={{ animation: 'ls-spin 0.7s linear infinite' }} />
-                        : <><span>Login</span><ChevronRight size={16} /></>
+                        : <><span>Send OTP</span><ChevronRight size={16} /></>
                       }
                     </motion.button>
                   </motion.div>
