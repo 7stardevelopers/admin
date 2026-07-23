@@ -33,7 +33,7 @@ function SkeletonRow({ cols }: { cols: number }) {
   );
 }
 
-export function DataTable<T extends { id?: string }>({
+export function DataTable<T extends Record<string, any>>({
   columns, data, isLoading, emptyText = 'No data found', onRowClick,
 }: DataTableProps<T>) {
   return (

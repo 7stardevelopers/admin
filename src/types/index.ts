@@ -1,7 +1,7 @@
 export type Role = 'CUSTOMER' | 'PROVIDER' | 'ADMIN';
 export type BookingStatus = 'PENDING' | 'ACCEPTED' | 'EN_ROUTE' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'REJECTED';
 export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
-export type ProviderStatus = 'PENDING' | 'VERIFIED' | 'REJECTED' | 'SUSPENDED';
+export type ProviderStatus = 'PENDING' | 'APPROVED' | 'SUSPENDED';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -35,22 +35,21 @@ export interface User {
 }
 
 export interface Provider {
-  id: string;
-  userId: string;
+  provider_id: string;
+  user_id: string;
   bio?: string;
-  experience?: number;
+  years_experience?: number;
   status: ProviderStatus;
-  rating: number;
-  totalReviews: number;
-  totalEarnings: number;
-  walletBalance: number;
-  isAvailable: boolean;
-  documents?: any;
-  bankDetails?: any;
-  createdAt: string;
-  user: User;
-  services?: ProviderService[];
-  _count?: { bookings: number };
+  avg_rating: number;
+  total_reviews: number;
+  wallet_balance: number;
+  is_available: boolean;
+  avg_response_secs?: number;
+  acceptance_rate?: number;
+  created_at: string;
+  name?: string;
+  phone?: string;
+  photo_url?: string;
 }
 
 export interface Category {

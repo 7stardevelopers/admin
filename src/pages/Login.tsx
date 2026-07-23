@@ -385,6 +385,10 @@ export default function Login() {
       const res = await authApi.login(phone.trim(), otp);
       const payload = res.data.data ?? res.data;
       const { user } = payload;
+      if (user?.role !== 'ADMIN') {
+        setError('Access denied. This portal is for admin accounts only.');
+        return;
+      }
       const token = payload.access_token ?? payload.accessToken ?? payload.token ?? payload.jwt;
       if (!token) {
         console.error('Login response had no recognizable token field:', payload);

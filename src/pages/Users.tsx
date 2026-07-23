@@ -7,9 +7,8 @@ import { DataTable } from '@/components/ui/DataTable';
 import { Pagination } from '@/components/ui/Pagination';
 import { PageTransition } from '@/components/PageTransition';
 import { FloatingLabel } from '@/components/effects/FloatingLabel';
-import { providersApi } from '@/lib/api';
+import { usersApi } from '@/lib/api';
 import { formatDate, getInitials } from '@/lib/utils';
-import type { Provider } from '@/types';
 
 export default function Users() {
   const { setMode } = useVectr();
@@ -20,18 +19,19 @@ export default function Users() {
   const { data, isLoading } = useQuery({
     queryKey: ['users-all', page, search],
     queryFn: async () => {
-      const res = await providersApi.getAll({ page, limit: 20, ...(search && { search }) });
+      const res = await usersApi.getAll({ page, per_page: 20, ...(search && { search }) });
       return res.data;
     },
   });
 
-  const users: Provider[] = data?.data ?? [];
-  const pagination = data?.pagination;
+  const users: any[] = Array.isArray(data?.data?.items) ? data.data.items : (Array.isArray(data?.data) ? data.data : []);
+  const total = data?.data?.total ?? 0;
+  const totalPages = total ? Math.ceil(total / 20) : 1;
 
   const columns = [
     {
       key: 'user', header: 'User',
-      render: (r: Provider) => (
+      render: (r: any) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <motion.div
             whileHover={{ scale: 1.12, rotate: 4 }}
@@ -44,52 +44,38 @@ export default function Users() {
               boxShadow: '0 4px 12px rgba(37,99,235,0.25)',
             }}
           >
-            {getInitials(r.user?.name ?? 'U')}
+            {getInitials(r.name ?? r.user_id ?? 'U')}
           </motion.div>
           <div>
-            <p style={{ fontWeight: 600, fontSize: '13px' }}>{r.user?.name}</p>
-            <p style={{ fontSize: '11px', color: 'var(--muted)' }}>{r.user?.email ?? '—'}</p>
+            <p style={{ fontWeight: 600, fontSize: '13px' }}>{r.name ?? r.user_id}</p>
+            <p style={{ fontSize: '11px', color: 'var(--muted)' }}>{r.email ?? '—'}</p>
           </div>
         </div>
       ),
     },
     {
       key: 'phone', header: 'Phone',
-      render: (r: Provider) => (
-        <span style={{ fontFamily: 'var(--mono)', fontSize: '13px' }}>{r.user?.phone}</span>
+      render: (r: any) => (
+        <span style={{ fontFamily: 'var(--mono)', fontSize: '13px' }}>{r.phone ?? '—'}</span>
       ),
     },
     {
       key: 'role', header: 'Role',
-      render: () => (
+      render: (r: any) => (
         <span style={{
           padding: '3px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 700,
           fontFamily: 'var(--mono)', letterSpacing: '0.04em',
           background: 'rgba(79,70,229,0.12)', color: '#818cf8',
           border: '1px solid rgba(79,70,229,0.2)',
         }}>
-          PROVIDER
+          {r.role ?? 'CUSTOMER'}
         </span>
-      ),
-    },
-    {
-      key: 'rating', header: 'Rating',
-      render: (r: Provider) => (
-        <span style={{ color: 'var(--amber)', fontFamily: 'var(--mono)', fontSize: '13px' }}>
-          ⭐ {r.rating.toFixed(1)}
-        </span>
-      ),
-    },
-    {
-      key: 'bookings', header: 'Bookings',
-      render: (r: Provider) => (
-        <span style={{ fontFamily: 'var(--mono)', fontSize: '13px' }}>{r._count?.bookings ?? 0}</span>
       ),
     },
     {
       key: 'joined', header: 'Joined',
-      render: (r: Provider) => (
-        <span style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{formatDate(r.createdAt)}</span>
+      render: (r: any) => (
+        <span style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{formatDate(r.created_at)}</span>
       ),
     },
   ];
@@ -106,7 +92,7 @@ export default function Users() {
         </div>
 
         <DataTable columns={columns} data={users} isLoading={isLoading} emptyText="No users found" />
-        {pagination && <Pagination page={page} totalPages={pagination.totalPages} onPageChange={setPage} />}
+        {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
       </DashboardLayout>
     </PageTransition>
   );

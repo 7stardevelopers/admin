@@ -43,7 +43,7 @@ export default api;
 // regardless of the declared content type.
 export const authApi = {
   login: (phone: string, otp: string) =>
-    api.post('/auth/verify-otp', JSON.stringify({ phone, otp, role: 'ADMIN' }), {
+    api.post('/auth/verify-otp', JSON.stringify({ phone, otp }), {
       headers: { 'Content-Type': 'text/plain' },
     }),
   sendOtp: (phone: string) =>
@@ -75,8 +75,8 @@ export const usersApi = {
 export const providersApi = {
   getAll: (params?: Record<string, any>) => api.get('/providers', { params }),
   getById: (id: string) => api.get(`/providers/${id}`),
-  updateStatus: (id: string, status: string) =>
-    api.patch(`/providers/${id}/status`, { status }),
+  approve: (id: string) => api.patch(`/providers/${id}/approve`, {}),
+  suspend: (id: string) => api.patch(`/providers/${id}/suspend`, {}),
 };
 
 // ── Services ────────────────────────────────────────────────────────────────
@@ -118,6 +118,14 @@ export const subscriptionsApi = {
   createPlan: (data: any) => api.post('/admin/subscriptions/plans', data),
   updatePlan: (id: string, data: any) =>
     api.patch(`/admin/subscriptions/plans/${id}`, data),
+};
+
+// ── Documents ─────────────────────────────────────────────────────────────────
+export const documentsApi = {
+  getByProvider: (providerId: string) => api.get(`/documents/${providerId}`),
+  getContent: (id: string) => api.get(`/documents/${id}/content`),
+  verify: (id: string, status: 'VERIFIED' | 'REJECTED', rejection_reason?: string) =>
+    api.patch(`/documents/${id}/verify`, { status, rejection_reason }),
 };
 
 // ── Announcements ─────────────────────────────────────────────────────────────

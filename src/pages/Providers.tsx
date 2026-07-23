@@ -15,43 +15,43 @@ import { formatDate, getInitials } from '@/lib/utils';
 import type { Provider, ProviderStatus } from '@/types';
 import { CheckCircle, XCircle, Eye } from 'lucide-react';
 
-const STATUS_TABS: Array<ProviderStatus | ''> = ['', 'PENDING', 'VERIFIED', 'REJECTED', 'SUSPENDED'];
+const STATUS_TABS: Array<ProviderStatus | ''> = ['', 'PENDING', 'APPROVED', 'SUSPENDED'];
 
 export default function Providers() {
   const { setMode } = useVectr();
   useEffect(() => { setMode('ambient'); }, [setMode]);
   const [page, setPage]           = useState(1);
   const [statusFilter, setStatus] = useState<ProviderStatus | ''>('PENDING');
-  const [modal, setModal]         = useState<{ provider: Provider; action: 'VERIFIED' | 'REJECTED' | 'SUSPENDED' } | null>(null);
+  const [modal, setModal]         = useState<{ provider: Provider; action: 'APPROVED' | 'SUSPENDED' } | null>(null);
   const queryClient = useQueryClient();
   const navigate    = useNavigate();
 
   const { data, isLoading } = useQuery({
     queryKey: ['providers', page, statusFilter],
     queryFn: async () => {
-      const res = await providersApi.getAll({ page, limit: 15, ...(statusFilter && { status: statusFilter }) });
+      const res = await providersApi.getAll({ page, per_page: 15, ...(statusFilter && { status: statusFilter }) });
       return res.data;
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
-      providersApi.updateStatus(id, status),
+    mutationFn: ({ id, action }: { id: string; action: 'APPROVED' | 'SUSPENDED' }) =>
+      action === 'APPROVED' ? providersApi.approve(id) : providersApi.suspend(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['providers'] }); setModal(null); },
   });
 
-  const providers: Provider[] = data?.data ?? [];
-  const pagination = data?.pagination;
+  const providers: Provider[] = Array.isArray(data?.data?.items) ? data.data.items : [];
+  const totalPages = data?.data?.total ? Math.ceil(data.data.total / 15) : 1;
 
   const columns = [
     {
       key: 'name', header: 'Provider',
       render: (r: Provider) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {r.user.avatar
+          {(r as any).photo_url
             ? (
               <motion.img
-                src={r.user.avatar}
+                src={(r as any).photo_url}
                 alt=""
                 whileHover={{ scale: 1.1, rotate: 3 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 18 }}
@@ -69,13 +69,13 @@ export default function Providers() {
                   fontSize: '12px', fontWeight: 700, color: '#ffffff',
                 }}
               >
-                {getInitials(r.user.name)}
+                {getInitials((r as any).name ?? '')}
               </motion.div>
             )
           }
           <div>
-            <p style={{ fontWeight: 600, fontSize: '13px' }}>{r.user.name}</p>
-            <p style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{r.user.phone}</p>
+            <p style={{ fontWeight: 600, fontSize: '13px' }}>{(r as any).name}</p>
+            <p style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{(r as any).phone}</p>
           </div>
         </div>
       ),
@@ -84,21 +84,16 @@ export default function Providers() {
       key: 'rating', header: 'Rating',
       render: (r: Provider) => (
         <span style={{ color: 'var(--amber)', fontWeight: 600, fontSize: '13px' }}>
-          ⭐ {r.rating.toFixed(1)} <span style={{ color: 'var(--muted)', fontSize: '11px' }}>({r.totalReviews})</span>
+          ⭐ {Number((r as any).avg_rating ?? 0).toFixed(1)}
+          <span style={{ color: 'var(--muted)', fontSize: '11px' }}> ({(r as any).total_reviews ?? 0})</span>
         </span>
       ),
     },
     { key: 'status', header: 'Status', render: (r: Provider) => <Badge status={r.status} /> },
     {
-      key: 'bookings', header: 'Bookings',
-      render: (r: Provider) => (
-        <span style={{ fontFamily: 'var(--mono)', fontSize: '13px' }}>{r._count?.bookings ?? 0}</span>
-      ),
-    },
-    {
       key: 'joined', header: 'Joined',
       render: (r: Provider) => (
-        <span style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{formatDate(r.createdAt)}</span>
+        <span style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{formatDate((r as any).created_at)}</span>
       ),
     },
     {
@@ -106,7 +101,7 @@ export default function Providers() {
       render: (r: Provider) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <motion.button
-            onClick={(e) => { e.stopPropagation(); navigate(`/providers/${r.id}`); }}
+            onClick={(e) => { e.stopPropagation(); navigate(`/providers/${(r as any).provider_id}`); }}
             whileHover={{ scale: 1.15, color: 'var(--amber)' }}
             whileTap={{ scale: 0.9 }}
             style={{ padding: '6px', borderRadius: '8px', color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer' }}
@@ -115,28 +110,19 @@ export default function Providers() {
             <Eye size={15} />
           </motion.button>
           {r.status === 'PENDING' && (
-            <>
-              <ClickSpark color="#34d399">
-                <motion.button
-                  onClick={(e) => { e.stopPropagation(); setModal({ provider: r, action: 'VERIFIED' }); }}
-                  whileHover={{ scale: 1.12 }}
-                  whileTap={{ scale: 0.9 }}
-                  style={{ padding: '6px', borderRadius: '8px', color: '#34d399', background: 'rgba(52,211,153,0.08)', border: 'none', cursor: 'pointer' }}
-                >
-                  <CheckCircle size={15} />
-                </motion.button>
-              </ClickSpark>
+            <ClickSpark color="#34d399">
               <motion.button
-                onClick={(e) => { e.stopPropagation(); setModal({ provider: r, action: 'REJECTED' }); }}
+                onClick={(e) => { e.stopPropagation(); setModal({ provider: r, action: 'APPROVED' }); }}
                 whileHover={{ scale: 1.12 }}
                 whileTap={{ scale: 0.9 }}
-                style={{ padding: '6px', borderRadius: '8px', color: '#f87171', background: 'rgba(248,113,113,0.08)', border: 'none', cursor: 'pointer' }}
+                style={{ padding: '6px', borderRadius: '8px', color: '#34d399', background: 'rgba(52,211,153,0.08)', border: 'none', cursor: 'pointer' }}
+                title="Approve"
               >
-                <XCircle size={15} />
+                <CheckCircle size={15} />
               </motion.button>
-            </>
+            </ClickSpark>
           )}
-          {r.status === 'VERIFIED' && (
+          {r.status === 'APPROVED' && (
             <motion.button
               onClick={(e) => { e.stopPropagation(); setModal({ provider: r, action: 'SUSPENDED' }); }}
               whileHover={{ scale: 1.05 }}
@@ -199,17 +185,17 @@ export default function Providers() {
         </div>
 
         <DataTable columns={columns} data={providers} isLoading={isLoading}
-          onRowClick={(r) => navigate(`/providers/${r.id}`)} />
-        {pagination && <Pagination page={page} totalPages={pagination.totalPages} onPageChange={setPage} />}
+          onRowClick={(r) => navigate(`/providers/${(r as any).provider_id}`)} />
+        {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
 
         <ConfirmModal
           isOpen={!!modal}
-          title={modal?.action === 'VERIFIED' ? 'Approve Provider' : modal?.action === 'REJECTED' ? 'Reject Provider' : 'Suspend Provider'}
-          message={`Are you sure you want to ${modal?.action?.toLowerCase()} ${modal?.provider.user.name}?`}
-          confirmLabel={modal?.action === 'VERIFIED' ? 'Approve' : modal?.action === 'REJECTED' ? 'Reject' : 'Suspend'}
-          confirmStyle={modal?.action === 'VERIFIED' ? 'success' : 'danger'}
+          title={modal?.action === 'APPROVED' ? 'Approve Provider' : 'Suspend Provider'}
+          message={`Are you sure you want to ${modal?.action === 'APPROVED' ? 'approve' : 'suspend'} ${(modal?.provider as any)?.name}?`}
+          confirmLabel={modal?.action === 'APPROVED' ? 'Approve' : 'Suspend'}
+          confirmStyle={modal?.action === 'APPROVED' ? 'success' : 'danger'}
           isLoading={updateMutation.isPending}
-          onConfirm={() => modal && updateMutation.mutate({ id: modal.provider.id, status: modal.action })}
+          onConfirm={() => modal && updateMutation.mutate({ id: (modal.provider as any).provider_id, action: modal.action })}
           onCancel={() => setModal(null)}
         />
       </DashboardLayout>
