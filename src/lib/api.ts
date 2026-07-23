@@ -114,10 +114,10 @@ export const logsApi = {
 
 // ── Subscriptions ─────────────────────────────────────────────────────────────
 export const subscriptionsApi = {
-  getPlans: () => api.get('/subscriptions/plans'),
-  createPlan: (data: any) => api.post('/subscriptions/plans', data),
+  getPlans: (params?: Record<string, any>) => api.get('/admin/subscriptions/plans', { params }),
+  createPlan: (data: any) => api.post('/admin/subscriptions/plans', data),
   updatePlan: (id: string, data: any) =>
-    api.patch(`/subscriptions/plans/${id}`, data),
+    api.patch(`/admin/subscriptions/plans/${id}`, data),
 };
 
 // ── Announcements ─────────────────────────────────────────────────────────────

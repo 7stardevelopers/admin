@@ -207,7 +207,8 @@ export default function Subscriptions() {
     queryKey: ['subscription-plans'],
     queryFn: async () => {
       const res = await subscriptionsApi.getPlans();
-      const rows = res.data.data ?? res.data;
+      const payload = res.data.data ?? res.data;
+      const rows = payload?.items ?? payload;
       return (Array.isArray(rows) ? rows : []).map((r: any): SubscriptionPlan => ({
         id: r.plan_id ?? r.id,
         name: r.name,
