@@ -31,11 +31,25 @@ api.interceptors.response.use(
 
 export default api;
 
+// The backend now answers OPTIONS preflight requests directly (see
+// lambda_function.py), so the CORS-preflight issue that used to block every
+// authenticated request is fixed. The text/plain trick in authApi below is
+// no longer strictly required, but is left in place since it's harmless and
+// already working.
+
 // ── Auth ────────────────────────────────────────────────────────────────────
+// Sent as "text/plain" (CORS-safelisted) — harmless leftover from before the
+// backend answered CORS preflight; the backend parses the raw JSON body
+// regardless of the declared content type.
 export const authApi = {
   login: (phone: string, otp: string) =>
-    api.post('/auth/verify-otp', { phone, otp, role: 'ADMIN' }),
-  sendOtp: (phone: string) => api.post('/auth/send-otp', { phone }),
+    api.post('/auth/verify-otp', JSON.stringify({ phone, otp }), {
+      headers: { 'Content-Type': 'text/plain' },
+    }),
+  sendOtp: (phone: string) =>
+    api.post('/auth/send-otp', JSON.stringify({ phone }), {
+      headers: { 'Content-Type': 'text/plain' },
+    }),
   getMe: () => api.get('/auth/me'),
 };
 
@@ -61,19 +75,22 @@ export const usersApi = {
 export const providersApi = {
   getAll: (params?: Record<string, any>) => api.get('/providers', { params }),
   getById: (id: string) => api.get(`/providers/${id}`),
-  updateStatus: (id: string, status: string) =>
-    api.patch(`/providers/${id}/status`, { status }),
+  approve: (id: string) => api.patch(`/providers/${id}/approve`, {}),
+  suspend: (id: string) => api.patch(`/providers/${id}/suspend`, {}),
 };
 
 // ── Services ────────────────────────────────────────────────────────────────
+// getAll/getCategories hit the admin-scoped list endpoints (not the public
+// customer-facing /services, /categories) so suspended services and inactive
+// categories still show up for management instead of disappearing entirely.
 export const servicesApi = {
-  getAll: (params?: Record<string, any>) => api.get('/services', { params }),
+  getAll: (params?: Record<string, any>) => api.get('/admin/services', { params }),
   getCategories: (params?: Record<string, any>) =>
-    api.get('/categories', { params }),
-  createService: (data: any) => api.post('/services', data),
-  updateService: (id: string, data: any) => api.put(`/services/${id}`, data),
-  deleteService: (id: string) => api.delete(`/services/${id}`),
-  createCategory: (data: any) => api.post('/categories', data),
+    api.get('/admin/categories', { params }),
+  createService: (data: any) => api.post('/admin/services', data),
+  updateService: (id: string, data: any) => api.patch(`/admin/services/${id}`, data),
+  deleteService: (id: string) => api.delete(`/admin/services/${id}`),
+  createCategory: (data: any) => api.post('/admin/categories', data),
   updateCategory: (id: string, data: any) => api.put(`/categories/${id}`, data),
 };
 
@@ -97,15 +114,23 @@ export const logsApi = {
 
 // ── Subscriptions ─────────────────────────────────────────────────────────────
 export const subscriptionsApi = {
-  getPlans: () => api.get('/subscriptions/plans'),
-  createPlan: (data: any) => api.post('/subscriptions/plans', data),
+  getPlans: (params?: Record<string, any>) => api.get('/admin/subscriptions/plans', { params }),
+  createPlan: (data: any) => api.post('/admin/subscriptions/plans', data),
   updatePlan: (id: string, data: any) =>
-    api.patch(`/subscriptions/plans/${id}`, data),
+    api.patch(`/admin/subscriptions/plans/${id}`, data),
+};
+
+// ── Documents ─────────────────────────────────────────────────────────────────
+export const documentsApi = {
+  getByProvider: (providerId: string) => api.get(`/documents/${providerId}`),
+  getContent: (id: string) => api.get(`/documents/${id}/content`),
+  verify: (id: string, status: 'VERIFIED' | 'REJECTED', rejection_reason?: string) =>
+    api.patch(`/documents/${id}/verify`, { status, rejection_reason }),
 };
 
 // ── Announcements ─────────────────────────────────────────────────────────────
 export const announcementsApi = {
   getAll: (params?: any) => api.get('/admin/announcements', { params }),
-  create: (data: { title: string; body: string; targetRole: string }) =>
-    api.post('/admin/announcements', data),
+  create: (data: { title: string; body: string; target_role: string }) =>
+    api.post('/notifications/announce', data),
 };

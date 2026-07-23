@@ -100,7 +100,7 @@ export default function Logs() {
             />
           </div>
           <select value={action} onChange={(e) => { setAction(e.target.value); setPage(1); }} style={selectStyle}
-            onFocus={(e) => { (e.currentTarget as HTMLSelectElement).style.boxShadow = '0 0 0 2px rgba(255,178,56,0.3)'; (e.currentTarget as HTMLSelectElement).style.borderColor = 'rgba(255,178,56,0.4)'; }}
+            onFocus={(e) => { (e.currentTarget as HTMLSelectElement).style.boxShadow = '0 0 0 2px rgba(37,99,235,0.3)'; (e.currentTarget as HTMLSelectElement).style.borderColor = 'rgba(37,99,235,0.4)'; }}
             onBlur={(e) => { (e.currentTarget as HTMLSelectElement).style.boxShadow = 'none'; (e.currentTarget as HTMLSelectElement).style.borderColor = ''; }}>
             <option value="">All Actions</option>
             {ACTIONS.filter(Boolean).map((a) => (
@@ -108,7 +108,7 @@ export default function Logs() {
             ))}
           </select>
           <select value={entity} onChange={(e) => { setEntity(e.target.value); setPage(1); }} style={selectStyle}
-            onFocus={(e) => { (e.currentTarget as HTMLSelectElement).style.boxShadow = '0 0 0 2px rgba(255,178,56,0.3)'; (e.currentTarget as HTMLSelectElement).style.borderColor = 'rgba(255,178,56,0.4)'; }}
+            onFocus={(e) => { (e.currentTarget as HTMLSelectElement).style.boxShadow = '0 0 0 2px rgba(37,99,235,0.3)'; (e.currentTarget as HTMLSelectElement).style.borderColor = 'rgba(37,99,235,0.4)'; }}
             onBlur={(e) => { (e.currentTarget as HTMLSelectElement).style.boxShadow = 'none'; (e.currentTarget as HTMLSelectElement).style.borderColor = ''; }}>
             <option value="">All Entities</option>
             {ENTITIES.filter(Boolean).map((e) => <option key={e} value={e}>{e}</option>)}
@@ -163,7 +163,7 @@ export default function Logs() {
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: Math.min(i * 0.025, 0.5), duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                        whileHover={{ backgroundColor: 'rgba(255,178,56,0.03)' }}
+                        whileHover={{ backgroundColor: 'rgba(37,99,235,0.05)' }}
                         style={{ borderBottom: 'var(--glass-border)' }}
                       >
                         {/* Time */}
@@ -181,9 +181,9 @@ export default function Logs() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <div style={{
                               width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-                              background: 'linear-gradient(135deg,#ffb238,#ff8a1e)',
+                              background: 'linear-gradient(135deg,#2563EB,#14B8A6)',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: '11px', fontWeight: 700, color: '#07090e',
+                              fontSize: '11px', fontWeight: 700, color: '#ffffff',
                             }}>
                               {(log.adminName ?? '?').charAt(0).toUpperCase()}
                             </div>

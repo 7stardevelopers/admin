@@ -22,15 +22,16 @@ function CreatePlanModal({ onClose, onSuccess }: { onClose: () => void; onSucces
 
   const mutation = useMutation({
     mutationFn: (d: PlanForm) => subscriptionsApi.createPlan({
-      ...d,
+      name: d.name,
       price: Number(d.price),
-      bookingsIncluded: Number(d.bookingsIncluded),
-      discountPct: Number(d.discountPct),
+      bookings_included: Number(d.bookingsIncluded),
+      discount_pct: Number(d.discountPct),
+      features: d.description ? { description: d.description } : undefined,
     }),
+
     onSuccess: () => { onSuccess(); onClose(); },
     onError: (e: any) => setServerError(e.response?.data?.message ?? 'Failed to create plan'),
   });
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -54,8 +55,8 @@ function CreatePlanModal({ onClose, onSuccess }: { onClose: () => void; onSucces
         className="glass-card"
         style={{
           padding: '28px', width: '100%', maxWidth: '460px',
-          background: 'rgba(12,16,24,0.92)',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
+          background: 'rgba(255,255,255,0.95)',
+          boxShadow: '0 24px 64px rgba(15,23,42,0.20), inset 0 1px 0 rgba(255,255,255,0.6)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
@@ -128,12 +129,12 @@ function PlanCard({ plan, onToggle, isToggling }: {
             whileHover={{ rotate: 8, scale: 1.08 }}
             style={{
               width: 38, height: 38, borderRadius: '10px',
-              background: 'linear-gradient(135deg,#ffb238,#ff8a1e)',
+              background: 'linear-gradient(135deg,#2563EB,#14B8A6)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 14px rgba(255,138,30,0.3)',
+              boxShadow: '0 4px 14px rgba(37,99,235,0.3)',
             }}
           >
-            <Crown size={18} color="#07090e" />
+            <Crown size={18} color="#ffffff" />
           </motion.div>
           <div>
             <h3 style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'var(--mono)' }}>{plan.name}</h3>
@@ -206,13 +207,25 @@ export default function Subscriptions() {
     queryKey: ['subscription-plans'],
     queryFn: async () => {
       const res = await subscriptionsApi.getPlans();
-      return res.data.data ?? res.data;
+      const payload = res.data.data ?? res.data;
+      const rows = payload?.items ?? payload;
+      return (Array.isArray(rows) ? rows : []).map((r: any): SubscriptionPlan => ({
+        id: r.plan_id ?? r.id,
+        name: r.name,
+        price: r.price,
+        bookingsIncluded: r.bookings_included ?? r.bookingsIncluded,
+        discountPct: r.discount_pct ?? r.discountPct,
+        description: r.features?.description ?? r.description,
+        isActive: r.is_active ?? r.isActive,
+        subscriberCount: r.subscriberCount,
+        createdAt: r.created_at ?? r.createdAt,
+      }));
     },
   });
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      subscriptionsApi.updatePlan(id, { isActive }),
+      subscriptionsApi.updatePlan(id, { is_active: isActive }),
     onSettled: () => {
       setTogglingId(null);
       queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });

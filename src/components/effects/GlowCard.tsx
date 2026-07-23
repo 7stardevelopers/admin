@@ -16,7 +16,7 @@ export function GlowCard({
   children,
   className,
   style,
-  glowColor = 'rgba(255,178,56,0.18)',
+  glowColor = 'rgba(37,99,235,0.14)',
   intensity = 1,
   onMouseMove,
   onMouseLeave,

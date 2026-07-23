@@ -5,6 +5,7 @@ import { Menu, X } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { Sidebar } from './Sidebar';
 import { ShinyText } from '@/components/effects/ShinyText';
+import { AtmosphericBackground } from '@/components/effects/AtmosphericBackground';
 
 interface DashboardLayoutProps {
   title?: string;
@@ -63,6 +64,8 @@ export function DashboardLayout({ title, subtitle, headerRight, children }: Dash
       overflow: 'hidden',
       position: 'relative',
     }}>
+      <AtmosphericBackground />
+
       {/* Desktop sidebar always rendered; mobile sidebar only when open */}
       {!isMobile && <Sidebar />}
 
@@ -100,10 +103,10 @@ export function DashboardLayout({ title, subtitle, headerRight, children }: Dash
             position: 'sticky',
             top: 0,
             zIndex: 5,
-            background: 'rgba(7, 9, 14, 0.7)',
+            background: 'rgba(255, 255, 255, 0.75)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
-            borderBottom: '1px solid rgba(255,178,56,0.08)',
+            borderBottom: '1px solid rgba(37,99,235,0.10)',
             padding: isMobile ? '16px 18px' : '20px 32px',
             display: 'flex',
             alignItems: 'flex-start',
@@ -123,8 +126,8 @@ export function DashboardLayout({ title, subtitle, headerRight, children }: Dash
                     width: 36,
                     height: 36,
                     borderRadius: '10px',
-                    background: 'rgba(255,178,56,0.08)',
-                    border: '1px solid rgba(255,178,56,0.18)',
+                    background: 'rgba(37,99,235,0.08)',
+                    border: '1px solid rgba(37,99,235,0.20)',
                     color: 'var(--amber)',
                     cursor: 'pointer',
                     flexShrink: 0,

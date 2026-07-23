@@ -80,7 +80,7 @@ export default function MapView() {
           minHeight: '480px',
           background: 'transparent',
           borderRadius: '20px',
-          border: '1px solid rgba(255,178,56,0.10)',
+          border: '1px solid rgba(37,99,235,0.14)',
           overflow: 'hidden',
         }}>
           {/* Provider node dots — animated with framer */}
@@ -104,7 +104,7 @@ export default function MapView() {
                 height: 10,
                 borderRadius: '50%',
                 background: 'var(--amber)',
-                boxShadow: '0 0 14px var(--amber), 0 0 30px rgba(255,178,56,0.5)',
+                boxShadow: '0 0 14px var(--amber), 0 0 30px rgba(37,99,235,0.5)',
                 zIndex: 2,
                 pointerEvents: 'none',
               }}
@@ -115,14 +115,14 @@ export default function MapView() {
           <GlowCard
             style={{
               position: 'absolute', top: 16, left: 16, zIndex: 2,
-              background: 'rgba(7,9,14,0.6)',
+              background: 'rgba(255,255,255,0.80)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,178,56,0.18)',
+              border: '1px solid rgba(37,99,235,0.20)',
               borderRadius: '12px',
               padding: '10px 14px',
               display: 'flex', alignItems: 'center', gap: '10px',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
             }}
           >
             <MapPin size={15} style={{ color: 'var(--amber)' }} />
@@ -148,15 +148,15 @@ export default function MapView() {
           <GlowCard
             style={{
               position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-              background: 'rgba(7,9,14,0.55)',
+              background: 'rgba(255,255,255,0.80)',
               backdropFilter: 'blur(24px)',
               WebkitBackdropFilter: 'blur(24px)',
-              border: '1px solid rgba(255,178,56,0.18)',
+              border: '1px solid rgba(37,99,235,0.20)',
               borderRadius: '14px',
               padding: '14px 22px',
               maxWidth: '520px', width: '90%', textAlign: 'center',
               zIndex: 2,
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 32px rgba(0,0,0,0.4)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 12px 32px rgba(15,23,42,0.14)',
             }}
           >
             <p style={{ fontSize: '13px', color: 'var(--ink)', lineHeight: 1.55 }}>

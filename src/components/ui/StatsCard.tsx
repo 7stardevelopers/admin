@@ -39,7 +39,7 @@ function parseValue(raw: string | number): { num: number | null; prefix: string;
 }
 
 export function StatsCard({ title, value, icon: Icon, trend, gradient }: StatsCardProps) {
-  const iconBg = gradient ?? 'linear-gradient(135deg, #ffb238, #ff8a1e)';
+  const iconBg = gradient ?? 'linear-gradient(135deg, #2563EB, #14B8A6)';
   const parsed = parseValue(value);
 
   // Heuristic — show decimals if the raw value has a "." that's not at the end
@@ -57,6 +57,8 @@ export function StatsCard({ title, value, icon: Icon, trend, gradient }: StatsCa
         position: 'relative',
         overflow: 'hidden',
         borderRadius: '18px',
+        height: '100%',
+        boxSizing: 'border-box',
       }}
     >
       {/* Ambient gradient glow blob */}
@@ -86,10 +88,10 @@ export function StatsCard({ title, value, icon: Icon, trend, gradient }: StatsCa
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          boxShadow: `0 4px 16px ${iconBg.includes('ffb238') ? 'rgba(255,178,56,0.30)' : 'rgba(0,0,0,0.25)'}`,
+          boxShadow: `0 4px 16px ${iconBg.includes('2563EB') ? 'rgba(37,99,235,0.30)' : 'rgba(15,23,42,0.18)'}`,
         }}
       >
-        <Icon size={20} color="#07090e" />
+        <Icon size={20} color="#ffffff" />
       </motion.div>
 
       {/* Content */}

@@ -62,10 +62,10 @@ export function Sidebar({ mobileOpen = false, onMobileClose, isMobile = false }:
 
   const baseSidebarStyle: React.CSSProperties = {
     flexShrink: 0,
-    background: 'rgba(12, 16, 24, 0.82)',
+    background: 'rgba(255, 255, 255, 0.82)',
     backdropFilter: 'blur(24px) saturate(1.4)',
     WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
-    borderRight: '1px solid rgba(255, 178, 56, 0.10)',
+    borderRight: '1px solid rgba(37, 99, 235, 0.12)',
     display: 'flex',
     flexDirection: 'column',
     height: '100vh',
@@ -104,8 +104,8 @@ export function Sidebar({ mobileOpen = false, onMobileClose, isMobile = false }:
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(12, 16, 24, 0.95)',
-            border: '1px solid rgba(255, 178, 56, 0.28)',
+            background: 'rgba(255, 255, 255, 0.95)',
+            border: '1px solid rgba(37, 99, 235, 0.30)',
             borderLeft: 'none',
             color: 'var(--amber)',
             borderRadius: '0 8px 8px 0',
@@ -192,7 +192,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose, isMobile = false }:
                 fontSize: '13px',
                 fontWeight: 500,
                 color: active ? 'var(--amber)' : 'var(--muted)',
-                background: active ? 'rgba(255,178,56,0.06)' : 'transparent',
+                background: active ? 'rgba(37,99,235,0.08)' : 'transparent',
                 textDecoration: 'none',
                 transition: 'color 0.15s, background 0.15s',
                 cursor: 'pointer',
@@ -200,7 +200,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose, isMobile = false }:
               onMouseEnter={(e) => {
                 if (!active) {
                   (e.currentTarget as HTMLElement).style.color = 'var(--ink)';
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)';
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(15,23,42,0.04)';
                 }
               }}
               onMouseLeave={(e) => {
@@ -222,7 +222,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose, isMobile = false }:
                     width: 3,
                     borderRadius: '0 3px 3px 0',
                     background: 'var(--amber)',
-                    boxShadow: '0 0 12px rgba(255,178,56,0.6)',
+                    boxShadow: '0 0 12px rgba(37,99,235,0.6)',
                   }}
                   transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                 />

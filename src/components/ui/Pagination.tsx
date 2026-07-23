@@ -18,7 +18,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
     cursor: 'pointer',
     transition: 'all 0.15s',
     border: active ? '1px solid var(--amber)' : 'var(--glass-border)',
-    background: active ? 'rgba(255,178,56,0.15)' : 'var(--glass-bg)',
+    background: active ? 'rgba(37,99,235,0.15)' : 'var(--glass-bg)',
     color: active ? 'var(--amber)' : 'var(--muted)',
   });
 

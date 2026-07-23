@@ -61,7 +61,9 @@ export const FloatingLabel = React.forwardRef<any, Props>(function FloatingLabel
     (rest as any).onChange?.(e);
   };
 
-  const floated = focused || hasValue;
+  // Selects always render the current option's text, even when unselected,
+  // so the label must stay floated out of the way instead of centering over it.
+  const floated = as === 'select' || focused || hasValue;
 
   const wrapStyle: React.CSSProperties = {
     position: 'relative',
@@ -74,12 +76,12 @@ export const FloatingLabel = React.forwardRef<any, Props>(function FloatingLabel
     borderRadius: '12px',
     fontSize: '14px',
     color: 'var(--ink)',
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,178,56,0.10)',
+    background: 'rgba(255,255,255,0.65)',
+    border: '1px solid rgba(37,99,235,0.16)',
     outline: 'none',
     transition: 'border-color 0.2s, box-shadow 0.2s, background 0.2s',
     fontFamily: 'inherit',
-    boxShadow: focused ? '0 0 0 2px rgba(255,178,56,0.30)' : 'none',
+    boxShadow: focused ? '0 0 0 2px rgba(37,99,235,0.22)' : 'none',
     resize: as === 'textarea' ? ('none' as const) : undefined,
     appearance: as === 'select' ? 'none' : undefined,
     cursor: as === 'select' ? 'pointer' : undefined,

@@ -28,7 +28,7 @@ function StarRating({ rating }: { rating: number }) {
             style={{
               color: s <= rating ? 'var(--amber)' : 'var(--muted)',
               fill: s <= rating ? 'var(--amber)' : 'none',
-              filter: s <= rating ? 'drop-shadow(0 0 4px rgba(255,178,56,0.4))' : 'none',
+              filter: s <= rating ? 'drop-shadow(0 0 4px rgba(37,99,235,0.4))' : 'none',
             }}
           />
         </motion.span>
@@ -133,7 +133,7 @@ export default function Reviews() {
                     transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                     style={{
                       position: 'absolute', inset: 0,
-                      background: 'rgba(255,178,56,0.15)',
+                      background: 'rgba(37,99,235,0.15)',
                       border: '1px solid var(--amber)',
                       borderRadius: '20px',
                       zIndex: 0,

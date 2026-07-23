@@ -33,7 +33,7 @@ function SkeletonRow({ cols }: { cols: number }) {
   );
 }
 
-export function DataTable<T extends { id?: string }>({
+export function DataTable<T extends Record<string, any>>({
   columns, data, isLoading, emptyText = 'No data found', onRowClick,
 }: DataTableProps<T>) {
   return (
@@ -44,7 +44,7 @@ export function DataTable<T extends { id?: string }>({
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead>
-            <tr style={{ background: 'rgba(255,178,56,0.04)' }}>
+            <tr style={{ background: 'rgba(37,99,235,0.05)' }}>
               {columns.map((col) => (
                 <th key={col.key} style={{
                   padding: '12px 16px',
@@ -90,9 +90,9 @@ export function DataTable<T extends { id?: string }>({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: Math.min(i * 0.035, 0.5), duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   onClick={() => onRowClick?.(row)}
-                  whileHover={{ backgroundColor: 'rgba(255,178,56,0.05)' }}
+                  whileHover={{ backgroundColor: 'rgba(37,99,235,0.06)' }}
                   style={{
-                    borderBottom: '1px solid rgba(255,178,56,0.06)',
+                    borderBottom: '1px solid rgba(37,99,235,0.08)',
                     background: 'transparent',
                     cursor: onRowClick ? 'pointer' : 'default',
                   }}

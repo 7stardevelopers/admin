@@ -34,12 +34,24 @@ export default function Announcements() {
     queryKey: ['announcements'],
     queryFn: async () => {
       const res = await announcementsApi.getAll({ limit: 50 });
-      return res.data.data ?? res.data ?? [];
+      const rows = res.data.data ?? res.data ?? [];
+      return (Array.isArray(rows) ? rows : []).map((r: any): Announcement => ({
+        id: r.notification_id ?? r.id,
+        title: r.title,
+        body: r.body,
+        targetRole: r.data?.target_role ?? r.targetRole ?? 'ALL',
+        sentBy: r.sentBy,
+        createdAt: r.created_at ?? r.createdAt,
+      }));
     },
   });
 
   const sendMutation = useMutation({
-    mutationFn: (d: AnnouncementForm) => announcementsApi.create(d),
+    mutationFn: (d: AnnouncementForm) => announcementsApi.create({
+      title: d.title,
+      body: d.body,
+      target_role: d.targetRole,
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['announcements'] });
       reset({ targetRole: 'ALL' });
@@ -77,8 +89,8 @@ export default function Announcements() {
               whileHover={{ rotate: 8, scale: 1.08 }}
               style={{
                 width: 32, height: 32, borderRadius: '8px',
-                background: 'rgba(255,178,56,0.10)',
-                border: '1px solid rgba(255,178,56,0.25)',
+                background: 'rgba(37,99,235,0.10)',
+                border: '1px solid rgba(37,99,235,0.25)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
@@ -168,7 +180,7 @@ export default function Announcements() {
               return (
                 <motion.div
                   key={a.id}
-                  whileHover={{ y: -2, boxShadow: '0 12px 32px rgba(0,0,0,0.4)' }}
+                  whileHover={{ y: -2, boxShadow: '0 12px 32px rgba(15,23,42,0.14)' }}
                   className="glass-card"
                   style={{
                     padding: '16px 20px',
