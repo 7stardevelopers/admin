@@ -374,7 +374,7 @@ export default function ProviderDetail() {
 
               {/* Action buttons */}
               <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {p.status === 'PENDING' && (
+                {(p.status === 'PENDING' || p.status === 'SUSPENDED') && (
                   <motion.button
                     onClick={() => setModal('APPROVED')}
                     whileHover={{ scale: 1.02, boxShadow: '0 8px 24px rgba(16,185,129,0.35)' }}
@@ -386,7 +386,7 @@ export default function ProviderDetail() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                     }}
                   >
-                    <CheckCircle size={16} /> Approve Provider
+                    <CheckCircle size={16} /> {p.status === 'SUSPENDED' ? 'Activate Provider' : 'Approve Provider'}
                   </motion.button>
                 )}
                 {(p.status === 'APPROVED' || p.status === 'PENDING') && (
@@ -481,9 +481,15 @@ export default function ProviderDetail() {
 
         <ConfirmModal
           isOpen={!!modal}
-          title={modal === 'APPROVED' ? 'Approve Provider' : 'Suspend Provider'}
-          message={`Are you sure you want to ${modal === 'APPROVED' ? 'approve' : 'suspend'} this provider?`}
-          confirmLabel={modal === 'APPROVED' ? 'Approve' : 'Suspend'}
+          title={modal === 'APPROVED'
+            ? (p?.status === 'SUSPENDED' ? 'Activate Provider' : 'Approve Provider')
+            : 'Suspend Provider'}
+          message={`Are you sure you want to ${modal === 'APPROVED'
+            ? (p?.status === 'SUSPENDED' ? 'activate' : 'approve')
+            : 'suspend'} this provider?`}
+          confirmLabel={modal === 'APPROVED'
+            ? (p?.status === 'SUSPENDED' ? 'Activate' : 'Approve')
+            : 'Suspend'}
           confirmStyle={modal === 'APPROVED' ? 'success' : 'danger'}
           isLoading={actionMutation.isPending}
           onConfirm={() => modal && actionMutation.mutate(modal)}

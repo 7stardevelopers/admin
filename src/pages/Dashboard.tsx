@@ -24,8 +24,14 @@ export default function Dashboard() {
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      const res = await dashboardApi.getStats();
-      return res.data.data;
+      const raw = (await dashboardApi.getStats()).data.data;
+      return {
+        total:        raw.total_bookings,
+        completed:    raw.completed_bookings,
+        pending:      raw.pending_bookings,
+        cancelled:    raw.cancelled_bookings,
+        totalRevenue: raw.total_revenue_paise / 100,
+      };
     },
   });
 
@@ -37,15 +43,15 @@ export default function Dashboard() {
     },
   });
 
-  const payments: Payment[] = paymentsData?.data ?? [];
+  const payments: Payment[] = paymentsData?.data?.items ?? [];
 
   // Build last-7-days revenue chart
   const last7 = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
     const label = d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric' });
-    const dayPayments = payments.filter((p) => {
-      const pd = new Date(p.paidAt ?? p.createdAt);
+    const dayPayments = payments.filter((p: any) => {
+      const pd = new Date((p as any).paid_at ?? (p as any).created_at);
       return pd.toDateString() === d.toDateString() && p.status === 'SUCCESS';
     });
     const revenue = dayPayments.reduce((sum, p) => sum + p.amount, 0);

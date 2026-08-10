@@ -10,7 +10,7 @@ import { PageTransition } from '@/components/PageTransition';
 import { reviewsApi } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import type { Review } from '@/types';
-import { Trash2, Star } from 'lucide-react';
+import { Trash2, Star, Search } from 'lucide-react';
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -45,13 +45,14 @@ export default function Reviews() {
   useEffect(() => { setMode('ambient'); }, [setMode]);
   const [page, setPage]             = useState(1);
   const [ratingFilter, setRating]   = useState('');
-  const [deleteTarget, setDelete]   = useState<Review | null>(null);
+  const [search, setSearch]         = useState('');
+  const [deleteTarget, setDelete]   = useState<any | null>(null);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['reviews', page, ratingFilter],
+    queryKey: ['reviews', page, ratingFilter, search],
     queryFn: async () => {
-      const res = await reviewsApi.getAll({ page, limit: 15, ...(ratingFilter && { rating: ratingFilter }) });
+      const res = await reviewsApi.getAll({ page, limit: 15, ...(ratingFilter && { rating: ratingFilter }), ...(search && { search }) });
       return res.data;
     },
   });
@@ -61,36 +62,36 @@ export default function Reviews() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['reviews'] }); setDelete(null); },
   });
 
-  const reviews: Review[] = data?.data ?? [];
-  const pagination = data?.pagination;
+  const reviews: any[] = data?.data?.items ?? [];
+  const totalPages = data?.data?.total ? Math.ceil(data.data.total / 15) : 1;
 
   const columns = [
     {
       key: 'reviewer', header: 'Reviewer',
-      render: (r: Review) => <span style={{ fontWeight: 600, fontSize: '13px' }}>{r.fromUser.name}</span>,
+      render: (r: any) => <span style={{ fontWeight: 600, fontSize: '13px' }}>{r.from_user_name ?? '—'}</span>,
     },
     {
       key: 'provider', header: 'Provider Reviewed',
-      render: (r: Review) => <span style={{ fontSize: '13px', color: 'var(--muted)' }}>{r.toUser.name}</span>,
+      render: (r: any) => <span style={{ fontSize: '13px', color: 'var(--muted)' }}>{r.to_user_name ?? '—'}</span>,
     },
     {
       key: 'service', header: 'Service',
-      render: (r: Review) => <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{r.booking.service.name}</span>,
+      render: (r: any) => <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{r.service_name ?? '—'}</span>,
     },
-    { key: 'rating', header: 'Rating', render: (r: Review) => <StarRating rating={r.rating} /> },
+    { key: 'rating', header: 'Rating', render: (r: any) => <StarRating rating={r.rating} /> },
     {
       key: 'comment', header: 'Comment',
-      render: (r: Review) => r.comment
+      render: (r: any) => r.comment
         ? <span style={{ fontSize: '12px', color: 'var(--muted)', maxWidth: '220px', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.comment}</span>
         : <span style={{ fontSize: '12px', color: 'var(--muted)', fontStyle: 'italic' }}>No comment</span>,
     },
     {
       key: 'date', header: 'Date',
-      render: (r: Review) => <span style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{formatDate(r.createdAt)}</span>,
+      render: (r: any) => <span style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{formatDate(r.created_at)}</span>,
     },
     {
       key: 'actions', header: '',
-      render: (r: Review) => (
+      render: (r: any) => (
         <motion.button
           onClick={(e) => { e.stopPropagation(); setDelete(r); }}
           whileHover={{ scale: 1.1, color: '#ef4444', background: 'rgba(239,68,68,0.16)' }}
@@ -106,8 +107,9 @@ export default function Reviews() {
   return (
     <PageTransition>
       <DashboardLayout title="Reviews" subtitle="Moderate platform reviews">
-        {/* Rating filter */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px', alignItems: 'center' }}>
+        {/* Rating filter + search */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
           <span style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>Rating:</span>
           {RATING_FILTERS.map((r) => {
             const active = ratingFilter === r;
@@ -144,19 +146,30 @@ export default function Reviews() {
               </motion.button>
             );
           })}
+          </div>
+          <div style={{ position: 'relative', width: '220px', flexShrink: 0 }}>
+            <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', pointerEvents: 'none' }} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search reviewer, provider…"
+              className="input-base"
+              style={{ padding: '8px 12px 8px 30px', fontSize: '12px', width: '100%' }}
+            />
+          </div>
         </div>
 
         <DataTable columns={columns} data={reviews} isLoading={isLoading} emptyText="No reviews found" />
-        {pagination && <Pagination page={page} totalPages={pagination.totalPages} onPageChange={setPage} />}
+        {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
 
         <ConfirmModal
           isOpen={!!deleteTarget}
           title="Delete Review"
-          message={`Delete ${deleteTarget?.fromUser.name}'s review? The provider's rating will be recalculated.`}
+          message={`Delete ${deleteTarget?.from_user_name ?? 'this'}'s review? The provider's rating will be recalculated.`}
           confirmLabel="Delete Review"
           confirmStyle="danger"
           isLoading={deleteMutation.isPending}
-          onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+          onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.review_id)}
           onCancel={() => setDelete(null)}
         />
       </DashboardLayout>

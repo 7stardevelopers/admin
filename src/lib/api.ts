@@ -21,7 +21,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && Cookies.get('admin_token')) {
+      // Only force-redirect when a previously authenticated session has expired.
+      // During the login flow (no cookie yet) let the component handle the error.
       Cookies.remove('admin_token');
       if (typeof window !== 'undefined') window.location.href = '/login';
     }
@@ -55,20 +57,21 @@ export const authApi = {
 
 // ── Dashboard ───────────────────────────────────────────────────────────────
 export const dashboardApi = {
-  getStats: () => api.get('/bookings/admin/stats'),
-  getRevenueStats: () => api.get('/payments'),
+  getStats: () => api.get('/admin/dashboard'),
+  getRevenueStats: () => api.get('/admin/payments'),
 };
 
 // ── Bookings ────────────────────────────────────────────────────────────────
 export const bookingsApi = {
   getAll: (params?: Record<string, any>) =>
-    api.get('/bookings/admin/all', { params }),
+    api.get('/admin/bookings', { params }),
 };
 
 // ── Users (customers) ───────────────────────────────────────────────────────
 export const usersApi = {
-  getAll: (params?: Record<string, any>) =>
-    api.get('/admin/users', { params }),
+  getAll:   (params?: Record<string, any>) => api.get('/admin/users', { params }),
+  suspend:  (id: string) => api.patch(`/admin/users/${id}/suspend`, {}),
+  activate: (id: string) => api.patch(`/admin/users/${id}/activate`, {}),
 };
 
 // ── Providers ───────────────────────────────────────────────────────────────
@@ -91,33 +94,34 @@ export const servicesApi = {
   updateService: (id: string, data: any) => api.patch(`/admin/services/${id}`, data),
   deleteService: (id: string) => api.delete(`/admin/services/${id}`),
   createCategory: (data: any) => api.post('/admin/categories', data),
-  updateCategory: (id: string, data: any) => api.put(`/categories/${id}`, data),
+  updateCategory: (id: string, data: any) => api.patch(`/admin/categories/${id}`, data),
+  deleteCategory: (id: string) => api.delete(`/admin/categories/${id}`),
 };
 
 // ── Payments ─────────────────────────────────────────────────────────────────
 export const paymentsApi = {
-  getAll: (params?: Record<string, any>) => api.get('/payments', { params }),
+  getAll: (params?: Record<string, any>) => api.get('/admin/payments', { params }),
   refund: (bookingId: string, amount?: number) =>
-    api.post('/payments/refund', { bookingId, amount }),
+    api.post('/payments/refund', { booking_id: bookingId, amount }),
 };
 
 // ── Reviews ──────────────────────────────────────────────────────────────────
 export const reviewsApi = {
-  getAll: (params?: Record<string, any>) => api.get('/reviews', { params }),
+  getAll: (params?: Record<string, any>) => api.get('/admin/reviews', { params }),
   delete: (id: string) => api.delete(`/reviews/${id}`),
 };
 
 // ── Audit Logs ───────────────────────────────────────────────────────────────
 export const logsApi = {
-  getAll: (params?: Record<string, any>) => api.get('/logs', { params }),
+  getAll: (params?: Record<string, any>) => api.get('/admin/logs', { params }),
 };
 
 // ── Subscriptions ─────────────────────────────────────────────────────────────
 export const subscriptionsApi = {
-  getPlans: (params?: Record<string, any>) => api.get('/admin/subscriptions/plans', { params }),
+  getPlans:   (params?: Record<string, any>) => api.get('/admin/subscriptions/plans', { params }),
   createPlan: (data: any) => api.post('/admin/subscriptions/plans', data),
-  updatePlan: (id: string, data: any) =>
-    api.patch(`/admin/subscriptions/plans/${id}`, data),
+  updatePlan: (id: string, data: any) => api.patch(`/admin/subscriptions/plans/${id}`, data),
+  deletePlan: (id: string) => api.delete(`/admin/subscriptions/plans/${id}`),
 };
 
 // ── Documents ─────────────────────────────────────────────────────────────────
@@ -132,5 +136,5 @@ export const documentsApi = {
 export const announcementsApi = {
   getAll: (params?: any) => api.get('/admin/announcements', { params }),
   create: (data: { title: string; body: string; target_role: string }) =>
-    api.post('/notifications/announce', data),
+    api.post('/admin/announcements', data),
 };

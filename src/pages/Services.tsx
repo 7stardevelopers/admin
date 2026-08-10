@@ -10,9 +10,10 @@ import { Button } from '@/components/ui/Button';
 import { PageTransition } from '@/components/PageTransition';
 import { FloatingLabel } from '@/components/effects/FloatingLabel';
 import { servicesApi } from '@/lib/api';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { formatCurrency } from '@/lib/utils';
 import type { Service, Category } from '@/types';
-import { Plus, Pencil, X, Clock } from 'lucide-react';
+import { Plus, Pencil, X, Clock, Trash2 } from 'lucide-react';
 
 // ── API adapters ─────────────────────────────────────────────────────────────
 // The backend returns snake_case fields (category_id, base_price, is_active…)
@@ -248,6 +249,36 @@ function AddCategoryModal({ onClose, onSuccess }: { onClose: () => void; onSucce
   );
 }
 
+function EditCategoryModal({ category, onClose, onSuccess }: { category: Category; onClose: () => void; onSuccess: () => void }) {
+  const defaults = { name: category.name, icon: category.icon ?? '', description: (category as any).description ?? '', sortOrder: category.sortOrder };
+  const { register, handleSubmit, formState: { errors } } = useForm<CategoryForm>({ defaultValues: defaults });
+  const [serverError, setServerError] = useState('');
+  const mutation = useMutation({
+    mutationFn: (d: CategoryForm) => servicesApi.updateCategory(category.id, {
+      name: d.name,
+      icon: d.icon,
+      description: d.description,
+      sort_order: d.sortOrder ? Number(d.sortOrder) : 0,
+    }),
+    onSuccess: () => { onSuccess(); onClose(); },
+    onError: (e: any) => setServerError(e.response?.data?.message ?? 'Failed to update'),
+  });
+  return (
+    <Modal title="Edit Category" onClose={onClose}>
+      <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <FloatingLabel label="Category Name *" error={errors.name?.message} {...register('name', { required: 'Name is required' })} />
+          <FloatingLabel label="Icon URL" {...register('icon')} />
+          <FloatingLabel label="Description" {...register('description')} />
+          <FloatingLabel type="number" label="Sort Order" {...register('sortOrder')} />
+        </div>
+        {serverError && <p style={{ color: '#f87171', fontSize: '13px', marginTop: '10px' }}>{serverError}</p>}
+        <ModalButtons onClose={onClose} loading={mutation.isPending} label="Save Changes" />
+      </form>
+    </Modal>
+  );
+}
+
 // ── Main Page ───────────────────────────────────────────────────────────────
 export default function Services() {
   const { setMode } = useVectr();
@@ -255,7 +286,14 @@ export default function Services() {
   const [activeTab, setActiveTab]   = useState<'services' | 'categories'>('services');
   const [showAdd, setShowAdd]       = useState(false);
   const [editService, setEdit]      = useState<Service | null>(null);
+  const [editCat, setEditCat]       = useState<Category | null>(null);
+  const [deleteCat, setDeleteCat]   = useState<Category | null>(null);
   const queryClient = useQueryClient();
+
+  const deleteCatMutation = useMutation({
+    mutationFn: (id: string) => servicesApi.deleteCategory(id),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); setDeleteCat(null); },
+  });
 
   const { data: servicesData, isLoading: loadingServices } = useQuery({
     queryKey: ['services-admin'],
@@ -366,6 +404,29 @@ export default function Services() {
       key: 'order', header: 'Sort Order',
       render: (r: Category) => <span style={{ color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{r.sortOrder}</span>,
     },
+    {
+      key: 'actions', header: '',
+      render: (r: Category) => (
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <motion.button
+            onClick={() => setEditCat(r)}
+            whileHover={{ scale: 1.15, color: 'var(--amber)' }}
+            whileTap={{ scale: 0.9 }}
+            style={{ padding: '6px', borderRadius: '8px', color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            <Pencil size={14} />
+          </motion.button>
+          <motion.button
+            onClick={() => setDeleteCat(r)}
+            whileHover={{ scale: 1.15, color: '#f87171' }}
+            whileTap={{ scale: 0.9 }}
+            style={{ padding: '6px', borderRadius: '8px', color: '#f87171', background: 'rgba(248,113,113,0.08)', border: 'none', cursor: 'pointer' }}
+          >
+            <Trash2 size={14} />
+          </motion.button>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -431,7 +492,23 @@ export default function Services() {
               onClose={() => setEdit(null)}
               onSuccess={() => { queryClient.invalidateQueries({ queryKey: ['services-admin'] }); setEdit(null); }} />
           )}
+          {editCat && (
+            <EditCategoryModal category={editCat}
+              onClose={() => setEditCat(null)}
+              onSuccess={() => queryClient.invalidateQueries({ queryKey: ['categories'] })} />
+          )}
         </AnimatePresence>
+
+        <ConfirmModal
+          isOpen={!!deleteCat}
+          title="Delete Category"
+          message={`Delete "${deleteCat?.name}"? This will also affect services in this category.`}
+          confirmLabel="Delete"
+          confirmStyle="danger"
+          isLoading={deleteCatMutation.isPending}
+          onConfirm={() => deleteCat && deleteCatMutation.mutate(deleteCat.id)}
+          onCancel={() => setDeleteCat(null)}
+        />
       </DashboardLayout>
     </PageTransition>
   );

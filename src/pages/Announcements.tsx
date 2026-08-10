@@ -36,12 +36,12 @@ export default function Announcements() {
       const res = await announcementsApi.getAll({ limit: 50 });
       const rows = res.data.data ?? res.data ?? [];
       return (Array.isArray(rows) ? rows : []).map((r: any): Announcement => ({
-        id: r.notification_id ?? r.id,
+        id: r.announcement_id ?? r.id,
         title: r.title,
         body: r.body,
-        targetRole: r.data?.target_role ?? r.targetRole ?? 'ALL',
-        sentBy: r.sentBy,
-        createdAt: r.created_at ?? r.createdAt,
+        targetRole: r.target_role ?? r.targetRole ?? 'ALL',
+        sentBy: r.sent_by ?? r.sentBy,
+        createdAt: r.sent_at ?? r.created_at ?? r.createdAt,
       }));
     },
   });

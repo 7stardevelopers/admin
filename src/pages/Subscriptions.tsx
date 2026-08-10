@@ -11,8 +11,9 @@ import { AnimatedCounter } from '@/components/effects/AnimatedCounter';
 import { FloatingLabel } from '@/components/effects/FloatingLabel';
 import { StaggerList } from '@/components/effects/StaggerList';
 import { subscriptionsApi } from '@/lib/api';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import type { SubscriptionPlan } from '@/types';
-import { Plus, Crown, X, Check } from 'lucide-react';
+import { Plus, Crown, X, Check, Trash2 } from 'lucide-react';
 
 type PlanForm = { name: string; price: number; bookingsIncluded: number; discountPct: number; description?: string };
 
@@ -96,10 +97,11 @@ function CreatePlanModal({ onClose, onSuccess }: { onClose: () => void; onSucces
   );
 }
 
-function PlanCard({ plan, onToggle, isToggling }: {
+function PlanCard({ plan, onToggle, isToggling, onDelete }: {
   plan: SubscriptionPlan;
   onToggle: () => void;
   isToggling: boolean;
+  onDelete: () => void;
 }) {
   const features = [
     `${plan.bookingsIncluded} bookings included per month`,
@@ -183,15 +185,30 @@ function PlanCard({ plan, onToggle, isToggling }: {
         ))}
       </ul>
 
-      {/* Action */}
-      <Button
-        variant={plan.isActive ? 'danger' : 'amber'}
-        loading={isToggling}
-        onClick={onToggle}
-        style={{ justifyContent: 'center', width: '100%' }}
-      >
-        {plan.isActive ? 'Deactivate Plan' : 'Activate Plan'}
-      </Button>
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <Button
+          variant={plan.isActive ? 'danger' : 'amber'}
+          loading={isToggling}
+          onClick={onToggle}
+          style={{ justifyContent: 'center', flex: 1 }}
+        >
+          {plan.isActive ? 'Deactivate' : 'Activate'}
+        </Button>
+        <motion.button
+          onClick={onDelete}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          style={{
+            padding: '8px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
+            color: '#f87171', background: 'rgba(248,113,113,0.08)',
+            border: '1px solid rgba(248,113,113,0.2)', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: '6px',
+          }}
+        >
+          <Trash2 size={14} />
+        </motion.button>
+      </div>
     </GlowCard>
   );
 }
@@ -199,8 +216,9 @@ function PlanCard({ plan, onToggle, isToggling }: {
 export default function Subscriptions() {
   const { setMode } = useVectr();
   useEffect(() => { setMode('ambient'); }, [setMode]);
-  const [showCreate, setShowCreate] = useState(false);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [showCreate, setShowCreate]   = useState(false);
+  const [togglingId, setTogglingId]   = useState<string | null>(null);
+  const [deletePlan, setDeletePlan]   = useState<SubscriptionPlan | null>(null);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -230,6 +248,11 @@ export default function Subscriptions() {
       setTogglingId(null);
       queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => subscriptionsApi.deletePlan(id),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['subscription-plans'] }); setDeletePlan(null); },
   });
 
   const plans: SubscriptionPlan[] = Array.isArray(data) ? data : [];
@@ -281,6 +304,7 @@ export default function Subscriptions() {
                   setTogglingId(plan.id);
                   toggleMutation.mutate({ id: plan.id, isActive: !plan.isActive });
                 }}
+                onDelete={() => setDeletePlan(plan)}
               />
             ))}
           </StaggerList>
@@ -294,6 +318,17 @@ export default function Subscriptions() {
             />
           )}
         </AnimatePresence>
+
+        <ConfirmModal
+          isOpen={!!deletePlan}
+          title="Delete Plan"
+          message={`Permanently delete "${deletePlan?.name}"? Existing subscribers will not be affected.`}
+          confirmLabel="Delete Plan"
+          confirmStyle="danger"
+          isLoading={deleteMutation.isPending}
+          onConfirm={() => deletePlan && deleteMutation.mutate(deletePlan.id)}
+          onCancel={() => setDeletePlan(null)}
+        />
       </DashboardLayout>
     </PageTransition>
   );

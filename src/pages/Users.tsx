@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useVectr } from '@/context/VectrContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { DataTable } from '@/components/ui/DataTable';
 import { Pagination } from '@/components/ui/Pagination';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { PageTransition } from '@/components/PageTransition';
 import { FloatingLabel } from '@/components/effects/FloatingLabel';
 import { usersApi } from '@/lib/api';
@@ -13,8 +14,16 @@ import { formatDate, getInitials } from '@/lib/utils';
 export default function Users() {
   const { setMode } = useVectr();
   useEffect(() => { setMode('ambient'); }, [setMode]);
-  const [page, setPage]     = useState(1);
-  const [search, setSearch] = useState('');
+  const [page, setPage]           = useState(1);
+  const [search, setSearch]       = useState('');
+  const [actionTarget, setTarget] = useState<{ user: any; type: 'suspend' | 'activate' } | null>(null);
+  const queryClient = useQueryClient();
+
+  const actionMutation = useMutation({
+    mutationFn: ({ id, type }: { id: string; type: 'suspend' | 'activate' }) =>
+      type === 'suspend' ? usersApi.suspend(id) : usersApi.activate(id),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users-all'] }); setTarget(null); },
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['users-all', page, search],
@@ -78,6 +87,28 @@ export default function Users() {
         <span style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{formatDate(r.created_at)}</span>
       ),
     },
+    {
+      key: 'actions', header: '',
+      render: (r: any) => r.status === 'SUSPENDED' ? (
+        <motion.button
+          onClick={(e) => { e.stopPropagation(); setTarget({ user: r, type: 'activate' }); }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.95 }}
+          style={{ padding: '4px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 600, color: '#34d399', background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', cursor: 'pointer' }}
+        >
+          Activate
+        </motion.button>
+      ) : (
+        <motion.button
+          onClick={(e) => { e.stopPropagation(); setTarget({ user: r, type: 'suspend' }); }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.95 }}
+          style={{ padding: '4px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 600, color: '#f87171', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', cursor: 'pointer' }}
+        >
+          Suspend
+        </motion.button>
+      ),
+    },
   ];
 
   return (
@@ -93,6 +124,17 @@ export default function Users() {
 
         <DataTable columns={columns} data={users} isLoading={isLoading} emptyText="No users found" />
         {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
+
+        <ConfirmModal
+          isOpen={!!actionTarget}
+          title={actionTarget?.type === 'suspend' ? 'Suspend User' : 'Activate User'}
+          message={`${actionTarget?.type === 'suspend' ? 'Suspend' : 'Activate'} ${actionTarget?.user?.name ?? 'this user'}? They ${actionTarget?.type === 'suspend' ? 'will lose access to the platform' : 'will regain access'}.`}
+          confirmLabel={actionTarget?.type === 'suspend' ? 'Suspend' : 'Activate'}
+          confirmStyle={actionTarget?.type === 'suspend' ? 'danger' : 'success'}
+          isLoading={actionMutation.isPending}
+          onConfirm={() => actionTarget && actionMutation.mutate({ id: actionTarget.user.id ?? actionTarget.user.user_id, type: actionTarget.type })}
+          onCancel={() => setTarget(null)}
+        />
       </DashboardLayout>
     </PageTransition>
   );

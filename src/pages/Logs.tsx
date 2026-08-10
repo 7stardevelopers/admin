@@ -78,8 +78,8 @@ export default function Logs() {
     },
   });
 
-  const logs: ActivityLog[] = data?.data ?? [];
-  const total     = data?.pagination?.total ?? 0;
+  const logs: any[] = data?.data?.items ?? [];
+  const total      = data?.data?.total ?? 0;
   const totalPages = Math.ceil(total / 25);
 
   const headers = ['Time', 'Admin', 'Action', 'Entity', 'Name / ID', 'Changes'];
@@ -170,10 +170,10 @@ export default function Logs() {
                         <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--muted)' }}>
                             <Clock size={11} />
-                            <span style={{ fontSize: '11px' }}>{timeAgo(log.createdAt)}</span>
+                            <span style={{ fontSize: '11px' }}>{timeAgo(log.created_at)}</span>
                           </div>
                           <p style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '2px', fontFamily: 'var(--mono)' }}>
-                            {formatDate(log.createdAt)}
+                            {formatDate(log.created_at)}
                           </p>
                         </td>
                         {/* Admin */}
@@ -185,9 +185,9 @@ export default function Logs() {
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontSize: '11px', fontWeight: 700, color: '#ffffff',
                             }}>
-                              {(log.adminName ?? '?').charAt(0).toUpperCase()}
+                              {(log.admin_name ?? '?').charAt(0).toUpperCase()}
                             </div>
-                            <span style={{ fontSize: '12px', fontWeight: 600 }}>{log.adminName ?? 'System'}</span>
+                            <span style={{ fontSize: '12px', fontWeight: 600 }}>{log.admin_name ?? 'System'}</span>
                           </div>
                         </td>
                         {/* Action */}
@@ -209,8 +209,7 @@ export default function Logs() {
                         </td>
                         {/* Name/ID */}
                         <td style={{ padding: '12px 16px' }}>
-                          {log.entityName && <p style={{ fontSize: '12px', fontWeight: 600 }}>{log.entityName}</p>}
-                          {log.entityId && <p style={{ fontSize: '10px', color: 'var(--muted)', fontFamily: 'var(--mono)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.entityId}</p>}
+                          {log.entity_id && <p style={{ fontSize: '10px', color: 'var(--muted)', fontFamily: 'var(--mono)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.entity_id}</p>}
                         </td>
                         {/* Changes */}
                         <td style={{ padding: '12px 16px', maxWidth: '260px' }}>

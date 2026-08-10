@@ -14,7 +14,7 @@ import { ClickSpark } from '@/components/effects/ClickSpark';
 import { paymentsApi } from '@/lib/api';
 import { formatDateTime, formatCurrency } from '@/lib/utils';
 import type { Payment } from '@/types';
-import { TrendingUp, CreditCard, RefreshCw, CheckCircle, RotateCcw } from 'lucide-react';
+import { TrendingUp, CreditCard, RefreshCw, CheckCircle, RotateCcw, Search } from 'lucide-react';
 
 const STATUS_FILTERS = ['', 'SUCCESS', 'FAILED', 'REFUNDED', 'PENDING'];
 
@@ -23,7 +23,8 @@ export default function Payments() {
   useEffect(() => { setMode('ambient'); }, [setMode]);
   const [page, setPage]             = useState(1);
   const [statusFilter, setStatus]   = useState('');
-  const [refundModal, setRefundModal] = useState<Payment | null>(null);
+  const [search, setSearch]         = useState('');
+  const [refundModal, setRefundModal] = useState<any | null>(null);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -39,57 +40,72 @@ export default function Payments() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['payments'] }); setRefundModal(null); },
   });
 
-  const payments: Payment[] = data?.data ?? [];
-  const pagination = data?.pagination;
-  const stats = data?.stats;
+  const allPayments: any[] = data?.data?.items ?? [];
+  const payments = search
+    ? allPayments.filter((r) => {
+        const q = search.toLowerCase();
+        return (r.payment_id ?? '').toLowerCase().includes(q)
+          || (r.service_name ?? '').toLowerCase().includes(q)
+          || (r.customer_name ?? '').toLowerCase().includes(q)
+          || (r.customer_phone ?? '').includes(q);
+      })
+    : allPayments;
+  const totalPages = data?.data?.total ? Math.ceil(data.data.total / 15) : 1;
+  const rawStats = data?.data?.stats;
+  const stats = rawStats ? {
+    totalRevenue:       rawStats.total_revenue / 100,
+    netRevenue:         (rawStats.total_revenue - rawStats.total_refunded) / 100,
+    totalRefunded:      rawStats.total_refunded / 100,
+    successfulPayments: rawStats.paid_count,
+  } : null;
 
   const columns = [
     {
       key: 'id', header: 'Payment ID',
-      render: (r: Payment) => (
+      render: (r: any) => (
         <span style={{ fontFamily: 'var(--mono)', fontSize: '12px', color: 'var(--amber)' }}>
-          #{r.id.slice(-8).toUpperCase()}
+          #{(r.payment_id ?? '').slice(-8).toUpperCase()}
         </span>
       ),
     },
     {
       key: 'booking', header: 'Service',
-      render: (r: Payment) => (
+      render: (r: any) => (
         <div>
-          <p style={{ fontWeight: 600, fontSize: '13px' }}>{r.booking.service.name}</p>
+          <p style={{ fontWeight: 600, fontSize: '13px' }}>{r.service_name ?? '—'}</p>
           <p style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
-            {r.booking.customer.name} · {r.booking.customer.phone}
+            {r.customer_name ?? '—'}{r.customer_phone ? ` · ${r.customer_phone}` : ''}
           </p>
         </div>
       ),
     },
     {
       key: 'amount', header: 'Amount',
-      render: (r: Payment) => (
+      render: (r: any) => (
         <div>
           <p style={{ fontWeight: 700, color: 'var(--amber)', fontFamily: 'var(--mono)' }}>{formatCurrency(r.amount)}</p>
-          {r.refundAmount && (
-            <p style={{ fontSize: '11px', color: '#f87171', fontFamily: 'var(--mono)' }}>−{formatCurrency(r.refundAmount)} refunded</p>
-          )}
+          {r.refund_amount ? (
+            <p style={{ fontSize: '11px', color: '#f87171', fontFamily: 'var(--mono)' }}>−{formatCurrency(r.refund_amount)} refunded</p>
+          ) : null}
         </div>
       ),
     },
     {
       key: 'method', header: 'Method',
-      render: (r: Payment) => (
-        <span style={{ fontSize: '12px', fontFamily: 'var(--mono)', fontWeight: 600, color: 'var(--muted)' }}>{r.method}</span>
+      render: (r: any) => (
+        <span style={{ fontSize: '12px', fontFamily: 'var(--mono)', fontWeight: 600, color: 'var(--muted)' }}>{r.payment_method ?? '—'}</span>
       ),
     },
-    { key: 'status', header: 'Status', render: (r: Payment) => <Badge status={r.status} /> },
+    { key: 'status', header: 'Status', render: (r: any) => <Badge status={r.status} /> },
     {
       key: 'paidAt', header: 'Paid At',
-      render: (r: Payment) => r.paidAt
-        ? <span style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{formatDateTime(r.paidAt)}</span>
+      render: (r: any) => (r.paid_at ?? r.created_at)
+        ? <span style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{formatDateTime(r.paid_at ?? r.created_at)}</span>
         : <span style={{ color: 'var(--muted)', fontSize: '12px' }}>—</span>,
     },
     {
       key: 'actions', header: '',
-      render: (r: Payment) => r.status === 'SUCCESS' ? (
+      render: (r: any) => r.status === 'SUCCESS' ? (
         <ClickSpark color="#f87171">
           <motion.button
             onClick={(e) => { e.stopPropagation(); setRefundModal(r); }}
@@ -129,8 +145,9 @@ export default function Payments() {
           </StaggerList>
         )}
 
-        {/* Filter tabs */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+        {/* Filter tabs + search */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
           {STATUS_FILTERS.map((s) => {
             const active = statusFilter === s;
             return (
@@ -166,19 +183,30 @@ export default function Payments() {
               </motion.button>
             );
           })}
+          </div>
+          <div style={{ position: 'relative', width: '220px', flexShrink: 0 }}>
+            <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', pointerEvents: 'none' }} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search customer, service…"
+              className="input-base"
+              style={{ padding: '8px 12px 8px 30px', fontSize: '12px', width: '100%' }}
+            />
+          </div>
         </div>
 
         <DataTable columns={columns} data={payments} isLoading={isLoading} emptyText="No payments found" />
-        {pagination && <Pagination page={page} totalPages={pagination.totalPages} onPageChange={setPage} />}
+        {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
 
         <ConfirmModal
           isOpen={!!refundModal}
           title="Issue Refund"
-          message={`Refund ${formatCurrency(refundModal?.amount ?? 0)} to ${refundModal?.booking.customer.name}? This cannot be undone.`}
+          message={`Refund ${formatCurrency(refundModal?.amount ?? 0)} to ${(refundModal as any)?.customer_name ?? 'customer'}? This cannot be undone.`}
           confirmLabel="Issue Refund"
           confirmStyle="danger"
           isLoading={refundMutation.isPending}
-          onConfirm={() => refundModal && refundMutation.mutate(refundModal.bookingId)}
+          onConfirm={() => refundModal && refundMutation.mutate((refundModal as any).booking_id)}
           onCancel={() => setRefundModal(null)}
         />
       </DashboardLayout>

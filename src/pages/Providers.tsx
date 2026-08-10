@@ -13,7 +13,7 @@ import { ClickSpark } from '@/components/effects/ClickSpark';
 import { providersApi } from '@/lib/api';
 import { formatDate, getInitials } from '@/lib/utils';
 import type { Provider, ProviderStatus } from '@/types';
-import { CheckCircle, XCircle, Eye } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Search } from 'lucide-react';
 
 const STATUS_TABS: Array<ProviderStatus | ''> = ['', 'PENDING', 'APPROVED', 'SUSPENDED'];
 
@@ -22,14 +22,15 @@ export default function Providers() {
   useEffect(() => { setMode('ambient'); }, [setMode]);
   const [page, setPage]           = useState(1);
   const [statusFilter, setStatus] = useState<ProviderStatus | ''>('PENDING');
+  const [search, setSearch]       = useState('');
   const [modal, setModal]         = useState<{ provider: Provider; action: 'APPROVED' | 'SUSPENDED' } | null>(null);
   const queryClient = useQueryClient();
   const navigate    = useNavigate();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['providers', page, statusFilter],
+    queryKey: ['providers', page, statusFilter, search],
     queryFn: async () => {
-      const res = await providersApi.getAll({ page, per_page: 15, ...(statusFilter && { status: statusFilter }) });
+      const res = await providersApi.getAll({ page, per_page: 15, ...(statusFilter && { status: statusFilter }), ...(search && { search }) });
       return res.data;
     },
   });
@@ -109,14 +110,14 @@ export default function Providers() {
           >
             <Eye size={15} />
           </motion.button>
-          {r.status === 'PENDING' && (
+          {(r.status === 'PENDING' || r.status === 'SUSPENDED') && (
             <ClickSpark color="#34d399">
               <motion.button
                 onClick={(e) => { e.stopPropagation(); setModal({ provider: r, action: 'APPROVED' }); }}
                 whileHover={{ scale: 1.12 }}
                 whileTap={{ scale: 0.9 }}
                 style={{ padding: '6px', borderRadius: '8px', color: '#34d399', background: 'rgba(52,211,153,0.08)', border: 'none', cursor: 'pointer' }}
-                title="Approve"
+                title={r.status === 'SUSPENDED' ? 'Activate' : 'Approve'}
               >
                 <CheckCircle size={15} />
               </motion.button>
@@ -140,7 +141,8 @@ export default function Providers() {
   return (
     <PageTransition>
       <DashboardLayout title="Providers" subtitle="Manage and verify service professionals">
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
           {STATUS_TABS.map((s) => {
             const active = statusFilter === s;
             return (
@@ -182,6 +184,17 @@ export default function Providers() {
               </motion.button>
             );
           })}
+          </div>
+          <div style={{ position: 'relative', width: '220px', flexShrink: 0 }}>
+            <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', pointerEvents: 'none' }} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search name or phone…"
+              className="input-base"
+              style={{ padding: '8px 12px 8px 30px', fontSize: '12px', width: '100%' }}
+            />
+          </div>
         </div>
 
         <DataTable columns={columns} data={providers} isLoading={isLoading}
@@ -190,9 +203,17 @@ export default function Providers() {
 
         <ConfirmModal
           isOpen={!!modal}
-          title={modal?.action === 'APPROVED' ? 'Approve Provider' : 'Suspend Provider'}
-          message={`Are you sure you want to ${modal?.action === 'APPROVED' ? 'approve' : 'suspend'} ${(modal?.provider as any)?.name}?`}
-          confirmLabel={modal?.action === 'APPROVED' ? 'Approve' : 'Suspend'}
+          title={modal?.action === 'APPROVED'
+            ? ((modal?.provider as any)?.status === 'SUSPENDED' ? 'Activate Provider' : 'Approve Provider')
+            : 'Suspend Provider'}
+          message={`Are you sure you want to ${
+            modal?.action === 'APPROVED'
+              ? ((modal?.provider as any)?.status === 'SUSPENDED' ? 'activate' : 'approve')
+              : 'suspend'
+          } ${(modal?.provider as any)?.name}?`}
+          confirmLabel={modal?.action === 'APPROVED'
+            ? ((modal?.provider as any)?.status === 'SUSPENDED' ? 'Activate' : 'Approve')
+            : 'Suspend'}
           confirmStyle={modal?.action === 'APPROVED' ? 'success' : 'danger'}
           isLoading={updateMutation.isPending}
           onConfirm={() => modal && updateMutation.mutate({ id: (modal.provider as any).provider_id, action: modal.action })}

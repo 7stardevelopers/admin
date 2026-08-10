@@ -23,7 +23,16 @@ export default function Analytics() {
 
   const { data: stats } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: async () => (await dashboardApi.getStats()).data.data,
+    queryFn: async () => {
+      const raw = (await dashboardApi.getStats()).data.data;
+      return {
+        total:        raw.total_bookings,
+        completed:    raw.completed_bookings,
+        pending:      raw.pending_bookings,
+        cancelled:    raw.cancelled_bookings,
+        totalRevenue: raw.total_revenue_paise / 100,
+      };
+    },
   });
 
   const { data: paymentsData } = useQuery({
@@ -36,18 +45,18 @@ export default function Analytics() {
     queryFn: async () => (await reviewsApi.getAll({ limit: 200 })).data,
   });
 
-  const payments: Payment[] = paymentsData?.data ?? [];
+  const payments: any[] = paymentsData?.data?.items ?? [];
 
   // Last 7 days revenue
   const last7Days = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
     const label = d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric' });
-    const dayPayments = payments.filter((p) => {
-      const pd = new Date(p.paidAt ?? p.createdAt);
+    const dayPayments = payments.filter((p: any) => {
+      const pd = new Date(p.paid_at ?? p.created_at);
       return pd.toDateString() === d.toDateString() && p.status === 'SUCCESS';
     });
-    return { label, revenue: dayPayments.reduce((s, p) => s + p.amount, 0) };
+    return { label, revenue: dayPayments.reduce((s: number, p: any) => s + p.amount, 0) };
   });
 
   // Booking funnel
@@ -60,8 +69,8 @@ export default function Analytics() {
 
   // Top services from payments
   const serviceMap: Record<string, number> = {};
-  payments.forEach((p) => {
-    const name = p.booking.service.name;
+  payments.forEach((p: any) => {
+    const name = p.service_name ?? 'Unknown';
     serviceMap[name] = (serviceMap[name] ?? 0) + p.amount;
   });
   const topServices = Object.entries(serviceMap)
@@ -70,12 +79,12 @@ export default function Analytics() {
     .slice(0, 6);
 
   // Key metrics
-  const totalRevenue = payments.filter((p) => p.status === 'SUCCESS').reduce((s, p) => s + p.amount, 0);
+  const totalRevenue = payments.filter((p: any) => p.status === 'SUCCESS').reduce((s: number, p: any) => s + p.amount, 0);
   const completedBookings = stats?.completed ?? 0;
   const totalBookings     = stats?.total ?? 0;
   const conversionRate    = totalBookings > 0 ? ((completedBookings / totalBookings) * 100).toFixed(1) : '0';
   const avgBookingValue   = completedBookings > 0 ? totalRevenue / completedBookings : 0;
-  const reviews           = reviewsData?.data ?? [];
+  const reviews: any[]    = reviewsData?.data?.items ?? reviewsData?.data ?? [];
   const avgRating         = reviews.length > 0
     ? (reviews.reduce((s: number, r: any) => s + r.rating, 0) / reviews.length).toFixed(1)
     : '—';
