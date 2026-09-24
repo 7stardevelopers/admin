@@ -80,6 +80,8 @@ export const providersApi = {
   getById: (id: string) => api.get(`/providers/${id}`),
   approve: (id: string) => api.patch(`/providers/${id}/approve`, {}),
   suspend: (id: string) => api.patch(`/providers/${id}/suspend`, {}),
+  getLocations: () => api.get('/admin/providers/locations'),
+  updateBio: (id: string, bio: string) => api.patch(`/admin/providers/${id}/bio`, { bio }),
 };
 
 // ── Services ────────────────────────────────────────────────────────────────
@@ -109,6 +111,7 @@ export const paymentsApi = {
 export const reviewsApi = {
   getAll: (params?: Record<string, any>) => api.get('/admin/reviews', { params }),
   delete: (id: string) => api.delete(`/reviews/${id}`),
+  getForProvider: (providerId: string) => api.get(`/reviews/provider/${providerId}`),
 };
 
 // ── Audit Logs ───────────────────────────────────────────────────────────────
@@ -137,4 +140,27 @@ export const announcementsApi = {
   getAll: (params?: any) => api.get('/admin/announcements', { params }),
   create: (data: { title: string; body: string; target_role: string }) =>
     api.post('/admin/announcements', data),
+  remove: (id: string) => api.delete(`/admin/announcements/${id}`),
+};
+
+// ── Coupons ──────────────────────────────────────────────────────────────────
+export const couponsApi = {
+  getAll: () => api.get('/admin/coupons'),
+  create: (data: any) => api.post('/coupons', data),
+  update: (id: string, data: any) => api.patch(`/coupons/${id}`, data),
+  remove: (id: string) => api.delete(`/coupons/${id}`),
+};
+
+// ── Calls (masked calling via Exotel) ───────────────────────────────────────────
+export const callsApi = {
+  initiate: (targetUserId: string) => api.post('/calls/initiate', { target_user_id: targetUserId }),
+};
+
+// ── Support tickets ────────────────────────────────────────────────────────────
+export const supportApi = {
+  getAll: (params?: Record<string, any>) => api.get('/support/tickets/all', { params }),
+  getById: (id: string) => api.get(`/support/tickets/${id}`),
+  updateStatus: (id: string, data: { status?: string; priority?: string }) =>
+    api.patch(`/support/tickets/${id}`, data),
+  reply: (id: string, content: string) => api.post(`/support/tickets/${id}/messages`, { content }),
 };

@@ -5,13 +5,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { PageTransition } from '@/components/PageTransition';
 import { GlowCard } from '@/components/effects/GlowCard';
 import { AnimatedCounter } from '@/components/effects/AnimatedCounter';
-import { providersApi, documentsApi } from '@/lib/api';
-import { formatDate, formatCurrency, getInitials } from '@/lib/utils';
-import { ArrowLeft, CheckCircle, Ban, ShieldCheck, XCircle, Eye, X } from 'lucide-react';
+import { providersApi, documentsApi, callsApi, reviewsApi } from '@/lib/api';
+import { formatDate, formatDateTime, formatCurrency, getInitials } from '@/lib/utils';
+import { ArrowLeft, CheckCircle, Ban, ShieldCheck, XCircle, Eye, X, Phone, Pencil, Star } from 'lucide-react';
 
 const DOC_LABELS: Record<string, string> = {
   AADHAAR_FRONT:       'Aadhaar Front',
@@ -251,6 +252,8 @@ export default function ProviderDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [modal, setModal] = useState<'APPROVED' | 'SUSPENDED' | null>(null);
+  const [editingBio, setEditingBio] = useState(false);
+  const [bioDraft, setBioDraft] = useState('');
 
   const { data: p, isLoading } = useQuery({
     queryKey: ['provider', id],
@@ -259,6 +262,20 @@ export default function ProviderDetail() {
       return res.data.data as Record<string, any>;
     },
     enabled: !!id,
+  });
+
+  const { data: reviews = [] } = useQuery({
+    queryKey: ['provider-reviews', id],
+    queryFn: async () => {
+      const res = await reviewsApi.getForProvider(id!);
+      return (res.data.data ?? []) as Record<string, any>[];
+    },
+    enabled: !!id,
+  });
+
+  const bioMutation = useMutation({
+    mutationFn: (bio: string) => providersApi.updateBio(id!, bio),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['provider', id] }); setEditingBio(false); },
   });
 
   const { data: docs = [], error: docsError } = useQuery({
@@ -274,6 +291,11 @@ export default function ProviderDetail() {
     mutationFn: (action: 'APPROVED' | 'SUSPENDED') =>
       action === 'APPROVED' ? providersApi.approve(id!) : providersApi.suspend(id!),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['provider', id] }); setModal(null); },
+  });
+
+  const callMutation = useMutation({
+    mutationFn: (userId: string) => callsApi.initiate(userId),
+    onError: (e: any) => alert(e.response?.data?.message ?? 'Could not place call'),
   });
 
   const verifyDocMutation = useMutation({
@@ -374,6 +396,21 @@ export default function ProviderDetail() {
 
               {/* Action buttons */}
               <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <motion.button
+                  onClick={() => p.user_id && callMutation.mutate(p.user_id)}
+                  disabled={callMutation.isPending}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  style={{
+                    width: '100%', padding: '10px', borderRadius: '10px', fontSize: '14px',
+                    fontWeight: 700, cursor: callMutation.isPending ? 'not-allowed' : 'pointer',
+                    color: 'var(--amber)', background: 'rgba(37,99,235,0.08)',
+                    border: '1px solid rgba(37,99,235,0.25)', opacity: callMutation.isPending ? 0.6 : 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  }}
+                >
+                  <Phone size={16} /> {callMutation.isPending ? 'Calling…' : 'Call Provider'}
+                </motion.button>
                 {(p.status === 'PENDING' || p.status === 'SUSPENDED') && (
                   <motion.button
                     onClick={() => setModal('APPROVED')}
@@ -408,18 +445,90 @@ export default function ProviderDetail() {
             </GlowCard>
 
             {/* Bio */}
-            {p.bio && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={cardStyle}
-              >
-                <p style={{ fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--amber)', marginBottom: '10px' }}>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={cardStyle}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <p style={{ fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--amber)' }}>
                   Bio
                 </p>
-                <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.6 }}>{p.bio}</p>
-              </motion.div>
-            )}
+                {!editingBio && (
+                  <motion.button
+                    onClick={() => { setBioDraft(p.bio ?? ''); setEditingBio(true); }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}
+                  >
+                    <Pencil size={14} />
+                  </motion.button>
+                )}
+              </div>
+              {editingBio ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <textarea
+                    className="input-base"
+                    value={bioDraft}
+                    onChange={(e) => setBioDraft(e.target.value)}
+                    rows={4}
+                    style={{ padding: '10px 12px', fontSize: '13px', resize: 'vertical' }}
+                  />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <Button variant="glass" onClick={() => setEditingBio(false)} style={{ flex: 1, justifyContent: 'center' }}>
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="amber"
+                      loading={bioMutation.isPending}
+                      onClick={() => bioMutation.mutate(bioDraft)}
+                      style={{ flex: 1, justifyContent: 'center' }}
+                    >
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.6 }}>
+                  {p.bio || 'No bio written yet.'}
+                </p>
+              )}
+            </motion.div>
+
+            {/* Reviews */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={cardStyle}
+            >
+              <p style={{ fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--amber)', marginBottom: '12px' }}>
+                Reviews ({reviews.length})
+              </p>
+              {reviews.length === 0 ? (
+                <p style={{ fontSize: '13px', color: 'var(--muted)' }}>No reviews yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '360px', overflowY: 'auto' }}>
+                  {reviews.map((r: any) => (
+                    <div key={r.review_id} style={{ paddingBottom: '10px', borderBottom: 'var(--glass-border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 600 }}>{r.customer_name ?? 'Customer'}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star key={s} size={11} style={{ color: s <= r.rating ? 'var(--amber)' : 'var(--muted)', fill: s <= r.rating ? 'var(--amber)' : 'none' }} />
+                          ))}
+                        </div>
+                      </div>
+                      {r.comment && (
+                        <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>{r.comment}</p>
+                      )}
+                      <p style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '4px', fontFamily: 'var(--mono)' }}>
+                        {formatDateTime(r.created_at)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
           </div>
 
           {/* Right panel */}

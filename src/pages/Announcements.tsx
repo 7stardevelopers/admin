@@ -9,10 +9,11 @@ import { PageTransition } from '@/components/PageTransition';
 import { GlowCard } from '@/components/effects/GlowCard';
 import { FloatingLabel } from '@/components/effects/FloatingLabel';
 import { StaggerList } from '@/components/effects/StaggerList';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { announcementsApi } from '@/lib/api';
 import { formatDateTime } from '@/lib/utils';
 import type { Announcement } from '@/types';
-import { Megaphone, Send, CheckCircle, Users, User, UserCheck } from 'lucide-react';
+import { Megaphone, Send, CheckCircle, Users, User, UserCheck, Trash2 } from 'lucide-react';
 
 type AnnouncementForm = { title: string; body: string; targetRole: string };
 
@@ -25,6 +26,7 @@ export default function Announcements() {
   useEffect(() => { setMode('ambient'); }, [setMode]);
   const [successMsg, setSuccessMsg] = useState('');
   const [serverError, setServerError] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null);
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<AnnouncementForm>({
     defaultValues: { targetRole: 'ALL' },
@@ -40,7 +42,7 @@ export default function Announcements() {
         title: r.title,
         body: r.body,
         targetRole: r.target_role ?? r.targetRole ?? 'ALL',
-        sentBy: r.sent_by ?? r.sentBy,
+        sentBy: r.sender_name ?? r.sentBy,
         createdAt: r.sent_at ?? r.created_at ?? r.createdAt,
       }));
     },
@@ -60,6 +62,14 @@ export default function Announcements() {
       setTimeout(() => setSuccessMsg(''), 4000);
     },
     onError: (e: any) => setServerError(e.response?.data?.message ?? 'Failed to send announcement'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => announcementsApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+      setDeleteTarget(null);
+    },
   });
 
   const announcements: Announcement[] = Array.isArray(data) ? data : [];
@@ -200,6 +210,14 @@ export default function Announcements() {
                     }}>
                       {targetIcon(a.targetRole)} {a.targetRole}
                     </span>
+                    <motion.button
+                      onClick={() => setDeleteTarget(a)}
+                      whileHover={{ scale: 1.1, color: '#ef4444', background: 'rgba(239,68,68,0.16)' }}
+                      whileTap={{ scale: 0.9 }}
+                      style={{ padding: '6px', borderRadius: '8px', color: '#f87171', background: 'rgba(248,113,113,0.08)', border: 'none', cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      <Trash2 size={14} />
+                    </motion.button>
                   </div>
                   <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.5 }}>{a.body}</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
@@ -213,6 +231,17 @@ export default function Announcements() {
             })}
           </StaggerList>
         )}
+
+        <ConfirmModal
+          isOpen={!!deleteTarget}
+          title="Delete Announcement"
+          message={`Delete "${deleteTarget?.title}"? This only removes it from the list — it won't unsend the push notification already delivered.`}
+          confirmLabel="Delete"
+          confirmStyle="danger"
+          isLoading={deleteMutation.isPending}
+          onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+          onCancel={() => setDeleteTarget(null)}
+        />
       </DashboardLayout>
     </PageTransition>
   );

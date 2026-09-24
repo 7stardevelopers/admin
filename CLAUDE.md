@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Node.js (`C:\Program Files\nodejs\`) is not on the system PATH by default. Prefix all npm commands accordingly, or add it to PATH first.
 
+On macOS/Linux, `npm`/`node` are typically already on PATH — just run `npm run dev` etc. directly.
+
 ```bash
 # Dev server (http://localhost:5173)
 "C:\Program Files\nodejs\npm.cmd" run dev
@@ -42,3 +44,9 @@ There is no test suite and no lint script configured.
 **Types:** Shared domain types (enums, entity interfaces, `ApiResponse<T>`, `PaginatedResponse<T>`) live in `src/types/index.ts`.
 
 **UI components:** Reusable components in `src/components/ui/` (Button, Badge, DataTable, Pagination, StatsCard, ConfirmModal). Visual effect components in `src/components/effects/` (ShinyText, GlowCard, AnimatedCounter, etc.). Pages wrap content in `DashboardLayout` and use these primitives directly — no component library.
+
+**Routing:** `App.tsx` is the single source of truth for the route table (`/dashboard`, `/bookings`, `/providers/:id`, etc.) — each page component wraps its own content in `<DashboardLayout>` individually rather than the layout being applied at the route level.
+
+**Deployment:** Builds and deploys via AWS Amplify (`amplify.yml`); the SPA rewrite rule sends all non-asset paths to `index.html` so client-side routing works. `VITE_API_URL` (set in `.env`, see `.env.example`) points at the API Gateway backend.
+
+**`legacy/` and `vendor/` are not part of the app:** they're a standalone static HTML/JS prototype (open `legacy/index.html` directly) of the scroll-driven Three.js/GSAP "transmission line" mechanic that `VectrBackground.tsx` was ported from. `README.md` documents that prototype, not the Vite app. Don't edit `legacy/`/`vendor/` when working on the actual admin dashboard.

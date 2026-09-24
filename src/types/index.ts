@@ -170,3 +170,21 @@ export interface Announcement {
   sentBy?: string;
   createdAt: string;
 }
+
+export type CouponType = 'FLAT' | 'PERCENT' | 'GPAY';
+
+export interface Coupon {
+  id: string;
+  code: string;
+  title: string;
+  type: CouponType;
+  value: number;
+  minOrderAmount: number;
+  maxDiscount?: number;
+  maxUses: number;
+  usedCount: number;
+  expiresAt: string;
+  isActive: boolean;
+  color?: string;
+  createdAt: string;
+}

@@ -1,32 +1,138 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageTransition } from '@/components/PageTransition';
 import { GlowCard } from '@/components/effects/GlowCard';
 import { StaggerList } from '@/components/effects/StaggerList';
-import { dashboardApi } from '@/lib/api';
+import { providersApi } from '@/lib/api';
+import { timeAgo } from '@/lib/utils';
+import { loadGoogleMaps } from '@/lib/googleMaps';
 import { useVectr } from '@/context/VectrContext';
-import { MapPin, Wifi, Activity, Globe } from 'lucide-react';
+import { MapPin, Wifi, Activity, WifiOff } from 'lucide-react';
+
+const INDIA_CENTER = { lat: 20.5937, lng: 78.9629 };
+const STALE_MS = 15 * 60 * 1000; // 15 minutes with no ping = considered stale
+
+type ProviderLocation = {
+  provider_id: string;
+  name: string;
+  status: string;
+  is_available: boolean;
+  last_lat: number | null;
+  last_lng: number | null;
+  last_seen_at: string | null;
+};
+
+function isStale(lastSeenAt: string | null): boolean {
+  if (!lastSeenAt) return true;
+  return Date.now() - new Date(lastSeenAt).getTime() > STALE_MS;
+}
 
 export default function MapView() {
   const { setMode } = useVectr();
   useEffect(() => { setMode('ambient'); }, [setMode]);
 
-  const { data: stats } = useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: async () => (await dashboardApi.getStats()).data.data,
+  const mapDivRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markersRef = useRef<google.maps.Marker[]>([]);
+  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const [mapsError, setMapsError] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['provider-locations'],
+    queryFn: async () => (await providersApi.getLocations()).data.data as ProviderLocation[],
+    refetchInterval: 15000,
   });
 
+  const providers = data ?? [];
+  const withCoords = providers.filter(p => p.last_lat != null && p.last_lng != null);
+  const onlineCount = providers.filter(p => p.is_available).length;
+  const staleCount = withCoords.filter(p => isStale(p.last_seen_at)).length;
+
+  const center = useMemo(() => {
+    if (withCoords.length === 0) return INDIA_CENTER;
+    const lat = withCoords.reduce((s, p) => s + Number(p.last_lat), 0) / withCoords.length;
+    const lng = withCoords.reduce((s, p) => s + Number(p.last_lng), 0) / withCoords.length;
+    return { lat, lng };
+  }, [withCoords]);
+
+  // Load the SDK once and create the map instance.
+  useEffect(() => {
+    let cancelled = false;
+    loadGoogleMaps()
+      .then((g) => {
+        if (cancelled || !mapDivRef.current || mapRef.current) return;
+        mapRef.current = new g.maps.Map(mapDivRef.current, {
+          center,
+          zoom: withCoords.length ? 11 : 5,
+          disableDefaultUI: false,
+          streetViewControl: false,
+          mapTypeControl: false,
+        });
+        infoWindowRef.current = new g.maps.InfoWindow();
+        setMapReady(true);
+      })
+      .catch((e) => setMapsError(e.message ?? 'Could not load Google Maps'));
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Re-render markers whenever the provider list refreshes.
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return;
+    const g = window.google;
+
+    markersRef.current.forEach(m => m.setMap(null));
+    markersRef.current = withCoords.map((p) => {
+      const stale = isStale(p.last_seen_at);
+      const color = !p.is_available ? '#9ca3af' : stale ? '#f59e0b' : '#34d399';
+      const marker = new g.maps.Marker({
+        position: { lat: Number(p.last_lat), lng: Number(p.last_lng) },
+        map: mapRef.current!,
+        title: p.name,
+        icon: {
+          path: g.maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: color,
+          fillOpacity: 0.9,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+        },
+      });
+      marker.addListener('click', () => {
+        const staleNote = stale && p.is_available ? '<br/><span style="color:#f59e0b">⚠ Stale location</span>' : '';
+        infoWindowRef.current?.setContent(`
+          <div style="font-size:13px;line-height:1.5;color:#0f172a;">
+            <strong>${p.name}</strong><br/>
+            ${p.is_available ? 'Online' : 'Offline'} · ${p.status}<br/>
+            Last seen: ${p.last_seen_at ? timeAgo(p.last_seen_at) : 'never'}${staleNote}
+          </div>
+        `);
+        infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
+      });
+      return marker;
+    });
+  }, [withCoords, mapReady]);
+
+  // Re-center once we actually have real coordinates (initial load starts at India center).
+  useEffect(() => {
+    if (mapReady && mapRef.current && withCoords.length) {
+      mapRef.current.setCenter(center);
+      mapRef.current.setZoom(11);
+    }
+  }, [mapReady, center, withCoords.length]);
+
   const statCards = [
-    { label: 'Online Providers', value: stats?.total ? Math.floor(stats.total * 0.12) : '—', icon: Wifi,      color: '#34d399' },
-    { label: 'Active Bookings',  value: stats?.pending ?? '—',                                 icon: Activity,  color: '#ffb238' },
-    { label: 'Cities Covered',   value: 12,                                                    icon: Globe,     color: '#818cf8' },
+    { label: 'Online Providers', value: onlineCount,       icon: Wifi,     color: '#34d399' },
+    { label: 'Tracked on Map',   value: withCoords.length,  icon: Activity, color: '#ffb238' },
+    { label: 'Stale (>15m)',     value: staleCount,          icon: WifiOff,  color: '#f87171' },
   ];
 
   return (
     <PageTransition>
-      <DashboardLayout title="Live Provider Map" subtitle="Real-time provider location tracking — Phase 3">
+      <DashboardLayout title="Live Provider Map" subtitle="Real-time provider locations from the field">
         {/* Stats row */}
         <StaggerList
           style={{
@@ -69,53 +175,28 @@ export default function MapView() {
           ))}
         </StaggerList>
 
-        {/*
-          The Three.js SCENE IS the map. We carve out a transparent panel here
-          so the live amber transmission line shows through, then float
-          explanatory glass overlays on top of it.
-        */}
         <div style={{
           position: 'relative',
           height: 'calc(100vh - 280px)',
           minHeight: '480px',
-          background: 'transparent',
           borderRadius: '20px',
           border: '1px solid rgba(37,99,235,0.14)',
           overflow: 'hidden',
         }}>
-          {/* Provider node dots — animated with framer */}
-          {[
-            { left: '12%', top: '22%', delay: 0 },
-            { left: '34%', top: '64%', delay: 0.3 },
-            { left: '58%', top: '38%', delay: 0.6 },
-            { left: '76%', top: '74%', delay: 0.9 },
-            { left: '86%', top: '20%', delay: 1.2 },
-            { left: '22%', top: '82%', delay: 1.5 },
-          ].map((p, i) => (
-            <motion.span
-              key={i}
-              animate={{ scale: [1, 1.4, 1], opacity: [1, 0.5, 1] }}
-              transition={{ repeat: Infinity, duration: 2, delay: p.delay, ease: 'easeInOut' }}
-              style={{
-                position: 'absolute',
-                left: p.left,
-                top: p.top,
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                background: 'var(--amber)',
-                boxShadow: '0 0 14px var(--amber), 0 0 30px rgba(37,99,235,0.5)',
-                zIndex: 2,
-                pointerEvents: 'none',
-              }}
-            />
-          ))}
+          {mapsError ? (
+            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '8px', color: 'var(--muted)' }}>
+              <MapPin size={32} style={{ opacity: 0.5 }} />
+              <p style={{ fontSize: '13px' }}>{mapsError}</p>
+            </div>
+          ) : (
+            <div ref={mapDivRef} style={{ height: '100%', width: '100%' }} />
+          )}
 
-          {/* Top-left scene header glass chip */}
+          {/* Top-left legend chip */}
           <GlowCard
             style={{
-              position: 'absolute', top: 16, left: 16, zIndex: 2,
-              background: 'rgba(255,255,255,0.80)',
+              position: 'absolute', top: 16, left: 16, zIndex: 10,
+              background: 'rgba(255,255,255,0.90)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
               border: '1px solid rgba(37,99,235,0.20)',
@@ -130,7 +211,7 @@ export default function MapView() {
               fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: 700,
               color: 'var(--amber)', textTransform: 'uppercase', letterSpacing: '0.1em',
             }}>
-              Live Field View
+              {isLoading ? 'Loading…' : `${withCoords.length} providers on map`}
             </span>
             <motion.span
               animate={{ scale: [1, 1.4, 1], opacity: [1, 0.6, 1] }}
@@ -142,31 +223,6 @@ export default function MapView() {
                 marginLeft: 4,
               }}
             />
-          </GlowCard>
-
-          {/* Bottom centered glass note */}
-          <GlowCard
-            style={{
-              position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-              background: 'rgba(255,255,255,0.80)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              border: '1px solid rgba(37,99,235,0.20)',
-              borderRadius: '14px',
-              padding: '14px 22px',
-              maxWidth: '520px', width: '90%', textAlign: 'center',
-              zIndex: 2,
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 12px 32px rgba(15,23,42,0.14)',
-            }}
-          >
-            <p style={{ fontSize: '13px', color: 'var(--ink)', lineHeight: 1.55 }}>
-              <span style={{ color: 'var(--amber)', fontWeight: 700, fontFamily: 'var(--mono)', letterSpacing: '0.05em' }}>
-                LIVE FIELD VIEW
-              </span>
-              <span style={{ color: 'var(--muted)' }}>
-                {' '}— provider nodes power up as bookings are assigned
-              </span>
-            </p>
           </GlowCard>
         </div>
       </DashboardLayout>
