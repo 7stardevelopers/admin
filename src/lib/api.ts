@@ -154,6 +154,8 @@ export const couponsApi = {
 // ── Calls (masked calling via Exotel) ───────────────────────────────────────────
 export const callsApi = {
   initiate: (targetUserId: string) => api.post('/calls/initiate', { target_user_id: targetUserId }),
+  // GET /admin/calls — ADMIN/SUPPORT only. Filters: status, booking_id, user_id; page, per_page.
+  getLogs: (params?: Record<string, any>) => api.get('/admin/calls', { params }),
 };
 
 // ── Support tickets ────────────────────────────────────────────────────────────

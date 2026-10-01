@@ -25,6 +25,7 @@ import MapView       from '@/pages/MapView';
 import Coupons       from '@/pages/Coupons';
 import SupportTickets       from '@/pages/SupportTickets';
 import SupportTicketDetail  from '@/pages/SupportTicketDetail';
+import CallLogs      from '@/pages/CallLogs';
 
 import { VectrProvider, useVectr } from '@/context/VectrContext';
 
@@ -60,6 +61,7 @@ function AnimatedRoutes() {
         <Route path="/reviews"         element={<Reviews />} />
         <Route path="/users"           element={<Users />} />
         <Route path="/logs"            element={<Logs />} />
+        <Route path="/calls"           element={<CallLogs />} />
         <Route path="/subscriptions"   element={<Subscriptions />} />
         <Route path="/coupons"         element={<Coupons />} />
         <Route path="/support"         element={<SupportTickets />} />
