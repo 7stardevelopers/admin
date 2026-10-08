@@ -95,7 +95,27 @@ export default function Bookings() {
     },
     {
       key: 'status', header: 'Status',
-      render: (r: any) => <Badge status={r.status} />,
+      // IN_PROGRESS jobs complete only when both sides tap Done — show who we're waiting on.
+      render: (r: any) => {
+        const tag = r.status !== 'IN_PROGRESS' ? null
+          : r.completion_disputed_at ? { text: 'Disputed', color: '#ef4444' }
+          : r.provider_done_at && !r.customer_done_at ? { text: 'Awaiting customer', color: '#f59e0b' }
+          : r.customer_done_at && !r.provider_done_at ? { text: 'Awaiting worker', color: '#f59e0b' }
+          : null;
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+            <Badge status={r.status} />
+            {tag && (
+              <span style={{
+                fontSize: '10px', fontWeight: 700, fontFamily: 'var(--mono)', color: tag.color,
+                border: `1px solid ${tag.color}`, borderRadius: '10px', padding: '1px 7px',
+              }}>
+                {tag.text}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'scheduledAt', header: 'Scheduled',
