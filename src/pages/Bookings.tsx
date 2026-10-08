@@ -7,6 +7,8 @@ import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/ui/Pagination';
 import { PageTransition } from '@/components/PageTransition';
+import { ChatTranscriptModal } from '@/components/ChatTranscriptModal';
+import { MessageSquare } from 'lucide-react';
 import { bookingsApi } from '@/lib/api';
 import { formatDateTime, formatCurrency } from '@/lib/utils';
 import type { Booking, BookingStatus } from '@/types';
@@ -14,16 +16,43 @@ import { Search } from 'lucide-react';
 
 const STATUSES: Array<BookingStatus | ''> = ['', 'PENDING', 'ACCEPTED', 'EN_ROUTE', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'REJECTED'];
 
+const PAGE_SIZE = 15;
+
+// GET /admin/bookings row (snake_case) → the Booking shape this page renders.
+function toBooking(r: any): Booking {
+  return {
+    id: String(r.booking_id),
+    customerId: String(r.customer_id ?? ''),
+    providerId: r.provider_id ?? undefined,
+    status: r.status,
+    scheduledAt: r.scheduled_at,
+    totalAmount: Number(r.total_amount ?? 0),
+    platformFee: 0,
+    providerEarning: 0,
+    createdAt: r.created_at,
+    service: { id: '', name: r.service_name ?? '—', duration: 0 },
+    customer: { id: String(r.customer_id ?? ''), name: r.customer_name ?? '—', phone: r.customer_phone ?? '' },
+    provider: r.provider_id
+      ? { user: { id: String(r.provider_user_id ?? ''), name: r.provider_name ?? 'Expert', phone: '' } }
+      : undefined,
+  };
+}
+
 export default function Bookings() {
   const { setMode } = useVectr();
   useEffect(() => { setMode('ambient'); }, [setMode]);
   const [page, setPage]     = useState(1);
   const [status, setStatus] = useState<string>('');
+<<<<<<< HEAD
   const [search, setSearch] = useState('');
+=======
+  const [chatBooking, setChatBooking] = useState<Booking | null>(null);
+>>>>>>> ae8764e (know admin can see the chatt history of the both end usersgit push origin new_oct)
 
   const { data, isLoading } = useQuery({
     queryKey: ['bookings', page, status, search],
     queryFn: async () => {
+<<<<<<< HEAD
       const res = await bookingsApi.getAll({ page, limit: 15, ...(status && { status }), ...(search && { search }) });
       return res.data;
     },
@@ -31,6 +60,19 @@ export default function Bookings() {
 
   const bookings: any[] = data?.data?.items ?? [];
   const totalPages = data?.data?.total ? Math.ceil(data.data.total / 15) : 1;
+=======
+      const res = await bookingsApi.getAll({ page, limit: PAGE_SIZE, ...(status && { status }) });
+      const body = res.data?.data ?? {};
+      return {
+        bookings: (body.items ?? []).map(toBooking),
+        pagination: { totalPages: Math.max(1, Math.ceil((body.total ?? 0) / PAGE_SIZE)) },
+      };
+    },
+  });
+
+  const bookings: Booking[] = data?.bookings ?? [];
+  const pagination = data?.pagination;
+>>>>>>> ae8764e (know admin can see the chatt history of the both end usersgit push origin new_oct)
 
   const columns = [
     {
@@ -79,6 +121,21 @@ export default function Bookings() {
           {formatDateTime(r.scheduled_at)}
         </span>
       ),
+    },
+    {
+      key: 'chat', header: 'Chat',
+      render: (r: Booking) => r.provider ? (
+        <button
+          onClick={() => setChatBooking(r)}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px',
+            fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: 'var(--amber)',
+            background: 'var(--glass-bg)', border: 'var(--glass-border)',
+          }}
+        >
+          <MessageSquare size={13} /> View
+        </button>
+      ) : <span style={{ color: 'var(--muted)', fontSize: '12px' }}>—</span>,
     },
   ];
 
@@ -144,7 +201,12 @@ export default function Bookings() {
         </div>
 
         <DataTable columns={columns} data={bookings} isLoading={isLoading} emptyText="No bookings found" />
+<<<<<<< HEAD
         {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
+=======
+        {pagination && <Pagination page={page} totalPages={pagination.totalPages} onPageChange={setPage} />}
+        <ChatTranscriptModal booking={chatBooking} onClose={() => setChatBooking(null)} />
+>>>>>>> ae8764e (know admin can see the chatt history of the both end usersgit push origin new_oct)
       </DashboardLayout>
     </PageTransition>
   );

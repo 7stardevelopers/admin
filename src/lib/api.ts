@@ -57,14 +57,50 @@ export const authApi = {
 
 // ── Dashboard ───────────────────────────────────────────────────────────────
 export const dashboardApi = {
+<<<<<<< HEAD
   getStats: () => api.get('/admin/dashboard'),
   getRevenueStats: () => api.get('/admin/payments'),
+=======
+  // Backend: GET /admin/dashboard (snake_case counts; amounts are whole rupees,
+  // despite the `_paise` name). Reshaped to the { data: { data } } the pages read.
+  getStats: async () => {
+    const res = await api.get('/admin/dashboard');
+    const d = res.data?.data ?? {};
+    return {
+      ...res,
+      data: {
+        ...res.data,
+        data: {
+          total:        d.total_bookings ?? 0,
+          pending:      d.pending_bookings ?? 0,
+          completed:    d.completed_bookings ?? 0,
+          cancelled:    d.cancelled_bookings ?? 0,
+          today:        d.today_bookings ?? 0,
+          totalRevenue: d.total_revenue_paise ?? 0,
+          totalCustomers:           d.total_customers ?? 0,
+          totalProviders:           d.total_providers ?? 0,
+          pendingProviderApprovals: d.pending_provider_approvals ?? 0,
+        },
+      },
+    };
+  },
+  getRevenueStats: () => api.get('/payments'),
+>>>>>>> ae8764e (know admin can see the chatt history of the both end usersgit push origin new_oct)
 };
 
 // ── Bookings ────────────────────────────────────────────────────────────────
 export const bookingsApi = {
+<<<<<<< HEAD
   getAll: (params?: Record<string, any>) =>
     api.get('/admin/bookings', { params }),
+=======
+  // Backend: GET /admin/bookings → { items, total } (snake_case rows).
+  getAll: ({ limit, ...params }: Record<string, any> = {}) =>
+    api.get('/admin/bookings', { params: { ...params, per_page: limit ?? params.per_page } }),
+  // Chat transcript — admin/support can read it even after the booking ends.
+  getMessages: (id: string, params?: { before?: string; limit?: number }) =>
+    api.get(`/bookings/${id}/messages`, { params }),
+>>>>>>> ae8764e (know admin can see the chatt history of the both end usersgit push origin new_oct)
 };
 
 // ── Users (customers) ───────────────────────────────────────────────────────
@@ -116,7 +152,37 @@ export const reviewsApi = {
 
 // ── Audit Logs ───────────────────────────────────────────────────────────────
 export const logsApi = {
+<<<<<<< HEAD
   getAll: (params?: Record<string, any>) => api.get('/admin/logs', { params }),
+=======
+  // Backend: GET /admin/logs → { items, total }. It filters by `search` only.
+  getAll: async ({ limit, ...params }: Record<string, any> = {}) => {
+    const res = await api.get('/admin/logs', { params: { ...params, per_page: limit ?? params.per_page } });
+    const body = res.data?.data ?? {};
+    const parse = (v: any) => {
+      if (v == null || typeof v === 'object') return v ?? null;
+      try { return JSON.parse(v); } catch { return { value: v }; }
+    };
+    return {
+      ...res,
+      data: {
+        data: (body.items ?? []).map((r: any) => ({
+          id: String(r.id),
+          adminId: r.admin_id ?? null,
+          adminName: r.admin_name ?? null,
+          action: r.action ?? '',
+          entity: r.entity ?? '',
+          entityId: r.entity_id ?? null,
+          entityName: null,
+          changes: parse(r.changes),
+          ip: r.ip ?? null,
+          createdAt: r.created_at,
+        })),
+        pagination: { total: body.total ?? 0 },
+      },
+    };
+  },
+>>>>>>> ae8764e (know admin can see the chatt history of the both end usersgit push origin new_oct)
 };
 
 // ── Subscriptions ─────────────────────────────────────────────────────────────
