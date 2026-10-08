@@ -18,7 +18,7 @@ const STATUSES: Array<BookingStatus | ''> = ['', 'PENDING', 'ACCEPTED', 'EN_ROUT
 
 const PAGE_SIZE = 15;
 
-// GET /admin/bookings row (snake_case) → the Booking shape this page renders.
+// GET /admin/bookings row (snake_case) → the Booking shape the chat transcript modal takes.
 function toBooking(r: any): Booking {
   return {
     id: String(r.booking_id),
@@ -43,36 +43,19 @@ export default function Bookings() {
   useEffect(() => { setMode('ambient'); }, [setMode]);
   const [page, setPage]     = useState(1);
   const [status, setStatus] = useState<string>('');
-<<<<<<< HEAD
   const [search, setSearch] = useState('');
-=======
   const [chatBooking, setChatBooking] = useState<Booking | null>(null);
->>>>>>> ae8764e (know admin can see the chatt history of the both end usersgit push origin new_oct)
 
   const { data, isLoading } = useQuery({
     queryKey: ['bookings', page, status, search],
     queryFn: async () => {
-<<<<<<< HEAD
-      const res = await bookingsApi.getAll({ page, limit: 15, ...(status && { status }), ...(search && { search }) });
+      const res = await bookingsApi.getAll({ page, limit: PAGE_SIZE, ...(status && { status }), ...(search && { search }) });
       return res.data;
     },
   });
 
   const bookings: any[] = data?.data?.items ?? [];
-  const totalPages = data?.data?.total ? Math.ceil(data.data.total / 15) : 1;
-=======
-      const res = await bookingsApi.getAll({ page, limit: PAGE_SIZE, ...(status && { status }) });
-      const body = res.data?.data ?? {};
-      return {
-        bookings: (body.items ?? []).map(toBooking),
-        pagination: { totalPages: Math.max(1, Math.ceil((body.total ?? 0) / PAGE_SIZE)) },
-      };
-    },
-  });
-
-  const bookings: Booking[] = data?.bookings ?? [];
-  const pagination = data?.pagination;
->>>>>>> ae8764e (know admin can see the chatt history of the both end usersgit push origin new_oct)
+  const totalPages = data?.data?.total ? Math.ceil(data.data.total / PAGE_SIZE) : 1;
 
   const columns = [
     {
@@ -124,9 +107,9 @@ export default function Bookings() {
     },
     {
       key: 'chat', header: 'Chat',
-      render: (r: Booking) => r.provider ? (
+      render: (r: any) => r.provider_id ? (
         <button
-          onClick={() => setChatBooking(r)}
+          onClick={() => setChatBooking(toBooking(r))}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px',
             fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: 'var(--amber)',
@@ -201,12 +184,8 @@ export default function Bookings() {
         </div>
 
         <DataTable columns={columns} data={bookings} isLoading={isLoading} emptyText="No bookings found" />
-<<<<<<< HEAD
         {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
-=======
-        {pagination && <Pagination page={page} totalPages={pagination.totalPages} onPageChange={setPage} />}
         <ChatTranscriptModal booking={chatBooking} onClose={() => setChatBooking(null)} />
->>>>>>> ae8764e (know admin can see the chatt history of the both end usersgit push origin new_oct)
       </DashboardLayout>
     </PageTransition>
   );
