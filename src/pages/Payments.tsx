@@ -34,6 +34,7 @@ export default function Payments() {
   const [refundModal, setRefundModal] = useState<any | null>(null);
   const [refundRupees, setRefundRupees] = useState(''); // optional partial amount, in RUPEES
   const [refundError, setRefundError]   = useState<string | null>(null);
+  const [deductWorker, setDeductWorker] = useState(false); // worker bears the refund (completed jobs only)
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -46,14 +47,14 @@ export default function Payments() {
 
   const refundMutation = useMutation({
     // amountPaise undefined => backend refunds everything still refundable.
-    mutationFn: ({ paymentId, amountPaise }: { paymentId: string; amountPaise?: number }) =>
-      paymentsApi.refund(paymentId, amountPaise),
+    mutationFn: ({ paymentId, amountPaise, deduct }: { paymentId: string; amountPaise?: number; deduct: boolean }) =>
+      paymentsApi.refund(paymentId, amountPaise, deduct),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['payments'] }); closeRefund(); },
     onError: (e: any) => setRefundError(e.response?.data?.message ?? 'Refund failed'),
   });
 
-  const openRefund = (r: any) => { setRefundModal(r); setRefundRupees(''); setRefundError(null); };
-  const closeRefund = () => { setRefundModal(null); setRefundRupees(''); setRefundError(null); };
+  const openRefund = (r: any) => { setRefundModal(r); setRefundRupees(''); setRefundError(null); setDeductWorker(false); };
+  const closeRefund = () => { setRefundModal(null); setRefundRupees(''); setRefundError(null); setDeductWorker(false); };
   const submitRefund = () => {
     if (!refundModal) return;
     const remaining = refundableRemaining(refundModal);
@@ -65,7 +66,10 @@ export default function Payments() {
       if (amountPaise === remaining) amountPaise = undefined; // same as full refund
     }
     setRefundError(null);
-    refundMutation.mutate({ paymentId: refundModal.payment_id, amountPaise });
+    refundMutation.mutate({
+      paymentId: refundModal.payment_id, amountPaise,
+      deduct: deductWorker && refundModal.booking_status === 'COMPLETED',
+    });
   };
 
   const allPayments: any[] = data?.data?.items ?? [];
@@ -261,6 +265,12 @@ export default function Payments() {
               className="input-base"
               style={{ padding: '8px 12px', fontSize: '13px', width: '100%' }}
             />
+            {refundModal?.booking_status === 'COMPLETED' && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', fontSize: '13px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={deductWorker} onChange={(e) => setDeductWorker(e.target.checked)} />
+                Also deduct this amount from the worker's wallet
+              </label>
+            )}
             {refundError && (
               <p style={{ marginTop: '8px', fontSize: '12px', color: '#f87171' }}>{refundError}</p>
             )}
