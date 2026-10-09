@@ -6,7 +6,7 @@ import { StatsCard } from '@/components/ui/StatsCard';
 import { PageTransition } from '@/components/PageTransition';
 import { StaggerList } from '@/components/effects/StaggerList';
 import { dashboardApi, paymentsApi, reviewsApi } from '@/lib/api';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatPaise, fromPaise } from '@/lib/utils';
 import { useVectr } from '@/context/VectrContext';
 import { TrendingUp, Target, Star, BarChart3 } from 'lucide-react';
 import {
@@ -30,7 +30,7 @@ export default function Analytics() {
         completed:    raw.completed_bookings,
         pending:      raw.pending_bookings,
         cancelled:    raw.cancelled_bookings,
-        totalRevenue: raw.total_revenue_paise / 100,
+        totalRevenue: Number(raw.total_revenue_paise ?? 0), // paise
       };
     },
   });
@@ -54,9 +54,10 @@ export default function Analytics() {
     const label = d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric' });
     const dayPayments = payments.filter((p: any) => {
       const pd = new Date(p.paid_at ?? p.created_at);
-      return pd.toDateString() === d.toDateString() && p.status === 'SUCCESS';
+      return pd.toDateString() === d.toDateString() && p.status === 'PAID';
     });
-    return { label, revenue: dayPayments.reduce((s: number, p: any) => s + p.amount, 0) };
+    // amounts are paise; charts work in rupees
+    return { label, revenue: fromPaise(dayPayments.reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0)) };
   });
 
   // Booking funnel
@@ -69,21 +70,22 @@ export default function Analytics() {
 
   // Top services from payments
   const serviceMap: Record<string, number> = {};
-  payments.forEach((p: any) => {
-    const name = p.service_name ?? 'Unknown';
-    serviceMap[name] = (serviceMap[name] ?? 0) + p.amount;
+  payments.filter((p: any) => p.status === 'PAID').forEach((p: any) => {
+    const name = p.service_name ?? (p.purpose === 'SUBSCRIPTION' || !p.booking_id ? 'Subscriptions' : 'Unknown');
+    serviceMap[name] = (serviceMap[name] ?? 0) + Number(p.amount ?? 0); // paise
   });
   const topServices = Object.entries(serviceMap)
-    .map(([name, revenue]) => ({ name, revenue }))
+    .map(([name, revenue]) => ({ name, revenue: fromPaise(revenue) })) // rupees for chart
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 6);
 
   // Key metrics
-  const totalRevenue = payments.filter((p: any) => p.status === 'SUCCESS').reduce((s: number, p: any) => s + p.amount, 0);
+  // paise
+  const totalRevenue = payments.filter((p: any) => p.status === 'PAID').reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0);
   const completedBookings = stats?.completed ?? 0;
   const totalBookings     = stats?.total ?? 0;
   const conversionRate    = totalBookings > 0 ? ((completedBookings / totalBookings) * 100).toFixed(1) : '0';
-  const avgBookingValue   = completedBookings > 0 ? totalRevenue / completedBookings : 0;
+  const avgBookingValue   = completedBookings > 0 ? Math.round(totalRevenue / completedBookings) : 0; // paise
   const reviews: any[]    = reviewsData?.data?.items ?? reviewsData?.data ?? [];
   const avgRating         = reviews.length > 0
     ? (reviews.reduce((s: number, r: any) => s + r.rating, 0) / reviews.length).toFixed(1)
@@ -121,9 +123,9 @@ export default function Analytics() {
           }}
         >
           <StatsCard title="Conversion Rate"     value={`${conversionRate}%`}         icon={Target}    gradient="linear-gradient(135deg,#4F46E5,#7C3AED)" />
-          <StatsCard title="Avg Booking Value"   value={formatCurrency(avgBookingValue)} icon={TrendingUp} gradient="linear-gradient(135deg,#2563EB,#14B8A6)" />
+          <StatsCard title="Avg Booking Value"   value={formatPaise(avgBookingValue)} icon={TrendingUp} gradient="linear-gradient(135deg,#2563EB,#14B8A6)" />
           <StatsCard title="Avg Rating"          value={String(avgRating)}              icon={Star}      gradient="linear-gradient(135deg,#10b981,#059669)" />
-          <StatsCard title="Total Revenue"       value={formatCurrency(totalRevenue)}  icon={BarChart3} gradient="linear-gradient(135deg,#06b6d4,#0891b2)" />
+          <StatsCard title="Total Revenue"       value={formatPaise(totalRevenue)}  icon={BarChart3} gradient="linear-gradient(135deg,#06b6d4,#0891b2)" />
         </StaggerList>
 
         {/* Revenue trend */}

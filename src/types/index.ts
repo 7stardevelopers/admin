@@ -1,6 +1,10 @@
 export type Role = 'CUSTOMER' | 'PROVIDER' | 'ADMIN';
 export type BookingStatus = 'PENDING' | 'ACCEPTED' | 'EN_ROUTE' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'REJECTED';
-export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
+export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED' | 'REFUND_FAILED';
+export type PaymentPurpose = 'BOOKING' | 'SUBSCRIPTION';
+
+// NOTE: every money field below (price, amount, totals, fees, wallet, etc.) is
+// integer PAISE as returned by the backend. Format with formatPaise().
 export type ProviderStatus = 'PENDING' | 'APPROVED' | 'SUSPENDED';
 
 export interface ApiResponse<T> {
@@ -134,7 +138,7 @@ export interface DashboardStats {
   pending: number;
   completed: number;
   cancelled: number;
-  totalRevenue: number;
+  totalRevenue: number; // paise
 }
 
 export interface ActivityLog {

@@ -10,10 +10,12 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { PageTransition } from '@/components/PageTransition';
 import { FloatingLabel } from '@/components/effects/FloatingLabel';
 import { couponsApi } from '@/lib/api';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatPaise, toPaise } from '@/lib/utils';
 import type { Coupon } from '@/types';
 import { Plus, X, Tag } from 'lucide-react';
 
+// Money fields (FLAT value, minOrderAmount, maxDiscount) are entered in RUPEES
+// and sent as PAISE. PERCENT/GPAY value is a percentage and is sent as-is.
 type CouponForm = {
   code: string;
   title: string;
@@ -26,7 +28,7 @@ type CouponForm = {
 };
 
 function CreateCouponModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<CouponForm>();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<CouponForm>({ defaultValues: { type: 'FLAT' } });
   const [serverError, setServerError] = useState('');
   const type = watch('type');
 
@@ -35,9 +37,9 @@ function CreateCouponModal({ onClose, onSuccess }: { onClose: () => void; onSucc
       code: d.code.trim().toUpperCase(),
       title: d.title,
       type: d.type,
-      value: Number(d.value),
-      min_order_amount: d.minOrderAmount ? Number(d.minOrderAmount) : 0,
-      max_discount: d.maxDiscount ? Number(d.maxDiscount) : undefined,
+      value: d.type === 'FLAT' ? toPaise(d.value) : Number(d.value), // FLAT: rupees → paise; %: as-is
+      min_order_amount: d.minOrderAmount ? toPaise(d.minOrderAmount) : 0,
+      max_discount: d.maxDiscount ? toPaise(d.maxDiscount) : undefined,
       max_uses: d.maxUses ? Number(d.maxUses) : 1000,
       expires_at: new Date(d.expiresAt).toISOString(),
     }),
@@ -109,12 +111,13 @@ function CreateCouponModal({ onClose, onSuccess }: { onClose: () => void; onSucc
                 type="number"
                 label={type === 'FLAT' ? 'Value (₹) *' : 'Value (%) *'}
                 error={errors.value?.message}
-                {...register('value', { required: 'Required', min: 1 })}
+                step={type === 'FLAT' ? '0.01' : '1'}
+                {...register('value', { required: 'Required', min: 1, ...(type !== 'FLAT' && { max: 100 }) })}
               />
-              <FloatingLabel type="number" label="Min Order Amount" {...register('minOrderAmount')} />
+              <FloatingLabel type="number" step="0.01" label="Min Order Amount (₹)" {...register('minOrderAmount')} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <FloatingLabel type="number" label="Max Discount" hint={type === 'FLAT' ? 'Not used for Flat' : undefined} {...register('maxDiscount')} />
+              <FloatingLabel type="number" step="0.01" label="Max Discount (₹)" hint={type === 'FLAT' ? 'Not used for Flat' : undefined} {...register('maxDiscount')} />
               <FloatingLabel type="number" label="Max Uses" hint="Default 1000" {...register('maxUses')} />
             </div>
             <FloatingLabel
@@ -202,14 +205,14 @@ export default function Coupons() {
       key: 'value', header: 'Value',
       render: (c: Coupon) => (
         <span style={{ fontSize: '13px', fontFamily: 'var(--mono)' }}>
-          {c.type === 'FLAT' ? `₹${c.value}` : `${c.value}%`}
-          {c.maxDiscount ? <span style={{ color: 'var(--muted)' }}> (cap ₹{c.maxDiscount})</span> : null}
+          {c.type === 'FLAT' ? formatPaise(c.value) : `${c.value}%`}
+          {c.maxDiscount ? <span style={{ color: 'var(--muted)' }}> (cap {formatPaise(c.maxDiscount)})</span> : null}
         </span>
       ),
     },
     {
       key: 'minOrder', header: 'Min Order',
-      render: (c: Coupon) => <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{c.minOrderAmount ? `₹${c.minOrderAmount}` : '—'}</span>,
+      render: (c: Coupon) => <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{c.minOrderAmount ? formatPaise(c.minOrderAmount) : '—'}</span>,
     },
     {
       key: 'used', header: 'Used',

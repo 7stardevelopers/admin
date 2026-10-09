@@ -11,7 +11,7 @@ import { PageTransition } from '@/components/PageTransition';
 import { FloatingLabel } from '@/components/effects/FloatingLabel';
 import { servicesApi } from '@/lib/api';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { formatCurrency } from '@/lib/utils';
+import { formatPaise, fromPaise, toPaise } from '@/lib/utils';
 import type { Service, Category } from '@/types';
 import { Plus, Pencil, X, Clock, Trash2 } from 'lucide-react';
 
@@ -108,6 +108,7 @@ function ModalButtons({ onClose, loading, label }: { onClose: () => void; loadin
 }
 
 // ── Service Form ──────────────────────────────────────────────────────────
+// Form values are RUPEES (basePrice); the API (and Service.basePrice) is PAISE.
 type ServiceForm = { name: string; categoryId: string; basePrice: number; duration: number; description?: string; image?: string };
 
 function ServiceFormFields({ register, errors, categories, defaults }: { register: any; errors: any; categories: Category[]; defaults?: Partial<ServiceForm> }) {
@@ -133,6 +134,7 @@ function ServiceFormFields({ register, errors, categories, defaults }: { registe
         <FloatingLabel
           type="number"
           label="Base Price (₹) *"
+          step="0.01"
           defaultValue={defaults?.basePrice}
           {...register('basePrice', { required: true, min: 1 })}
         />
@@ -166,7 +168,7 @@ function toServicePayload(d: ServiceForm) {
   return {
     name: d.name,
     category_id: d.categoryId,
-    base_price: Number(d.basePrice),
+    base_price: toPaise(d.basePrice), // rupees in the form → paise to the API
     duration: Number(d.duration),
     description: d.description,
     image_url: d.image,
@@ -196,7 +198,7 @@ function EditServiceModal({ service, categories, onClose, onSuccess }: { service
   const defaults = {
     name: service.name,
     categoryId: service.categoryId ?? service.category?.id ?? '',
-    basePrice: service.basePrice,
+    basePrice: fromPaise(service.basePrice), // paise → rupees for the form
     duration: service.duration,
     description: service.description ?? '',
     image: service.image ?? '',
@@ -341,7 +343,7 @@ export default function Services() {
     },
     {
       key: 'basePrice', header: 'Base Price',
-      render: (r: Service) => <span style={{ fontWeight: 700, color: 'var(--amber)', fontFamily: 'var(--mono)' }}>{formatCurrency(r.basePrice)}</span>,
+      render: (r: Service) => <span style={{ fontWeight: 700, color: 'var(--amber)', fontFamily: 'var(--mono)' }}>{formatPaise(r.basePrice)}</span>,
     },
     {
       key: 'duration', header: 'Duration',

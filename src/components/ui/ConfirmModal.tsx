@@ -11,11 +11,13 @@ interface ConfirmModalProps {
   isLoading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  /** Optional extra content (e.g. inputs, error text) rendered above the buttons. */
+  children?: React.ReactNode;
 }
 
 export function ConfirmModal({
   isOpen, title, message, confirmLabel = 'Confirm',
-  confirmStyle = 'amber', isLoading, onConfirm, onCancel,
+  confirmStyle = 'amber', isLoading, onConfirm, onCancel, children,
 }: ConfirmModalProps) {
   const confirmBg: Record<string, string> = {
     success: 'linear-gradient(135deg,#10b981,#059669)',
@@ -76,6 +78,7 @@ export function ConfirmModal({
             <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '24px', lineHeight: 1.6 }}>
               {message}
             </p>
+            {children}
             <div style={{ display: 'flex', gap: '10px' }}>
               <motion.button
                 whileHover={{ scale: 1.02, background: 'rgba(37,99,235,0.08)' }}

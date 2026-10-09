@@ -117,8 +117,9 @@ export const servicesApi = {
 // ── Payments ─────────────────────────────────────────────────────────────────
 export const paymentsApi = {
   getAll: (params?: Record<string, any>) => api.get('/admin/payments', { params }),
-  refund: (bookingId: string, amount?: number) =>
-    api.post('/payments/refund', { booking_id: bookingId, amount }),
+  // amount in paise; omit to refund everything still refundable. Works for booking and plan payments.
+  refund: (paymentId: string, amount?: number) =>
+    api.post('/payments/refund', { payment_id: paymentId, amount }),
 };
 
 // ── Reviews ──────────────────────────────────────────────────────────────────
