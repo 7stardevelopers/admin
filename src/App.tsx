@@ -24,6 +24,7 @@ import Analytics     from '@/pages/Analytics';
 import MapView       from '@/pages/MapView';
 import Coupons       from '@/pages/Coupons';
 import SupportTickets       from '@/pages/SupportTickets';
+import IdentityReports from '@/pages/IdentityReports';
 import SupportTicketDetail  from '@/pages/SupportTicketDetail';
 import CallLogs      from '@/pages/CallLogs';
 
@@ -66,6 +67,7 @@ function AnimatedRoutes() {
         <Route path="/coupons"         element={<Coupons />} />
         <Route path="/support"         element={<SupportTickets />} />
         <Route path="/support/:id"     element={<SupportTicketDetail />} />
+        <Route path="/identity-reports" element={<IdentityReports />} />
         <Route path="/announcements"   element={<Announcements />} />
         <Route path="/analytics"       element={<Analytics />} />
         <Route path="/map"             element={<MapView />} />

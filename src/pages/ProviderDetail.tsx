@@ -12,7 +12,7 @@ import { GlowCard } from '@/components/effects/GlowCard';
 import { AnimatedCounter } from '@/components/effects/AnimatedCounter';
 import { providersApi, documentsApi, callsApi, reviewsApi } from '@/lib/api';
 import { formatDate, formatDateTime, formatCurrency, getInitials } from '@/lib/utils';
-import { ArrowLeft, CheckCircle, Ban, ShieldCheck, XCircle, Eye, X, Phone, Pencil, Star } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Ban, ShieldCheck, XCircle, Eye, X, Phone, Pencil, Star, Camera } from 'lucide-react';
 
 const DOC_LABELS: Record<string, string> = {
   AADHAAR_FRONT:       'Aadhaar Front',
@@ -252,6 +252,7 @@ export default function ProviderDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [modal, setModal] = useState<'APPROVED' | 'SUSPENDED' | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
   const [editingBio, setEditingBio] = useState(false);
   const [bioDraft, setBioDraft] = useState('');
 
@@ -291,6 +292,14 @@ export default function ProviderDetail() {
     mutationFn: (action: 'APPROVED' | 'SUSPENDED') =>
       action === 'APPROVED' ? providersApi.approve(id!) : providersApi.suspend(id!),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['provider', id] }); setModal(null); },
+    // e.g. "Provider has no profile photo yet" — approval needs the selfie.
+    onError: (e: any) => { setModal(null); alert(e.response?.data?.message ?? 'Action failed'); },
+  });
+
+  const resetPhotoMutation = useMutation({
+    mutationFn: () => providersApi.resetPhoto(id!),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['provider', id] }); setResetOpen(false); },
+    onError: (e: any) => { setResetOpen(false); alert(e.response?.data?.message ?? 'Could not reset photo'); },
   });
 
   const callMutation = useMutation({
@@ -362,18 +371,33 @@ export default function ProviderDetail() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <GlowCard style={cardStyle}>
               <div style={{ textAlign: 'center' }}>
-                <motion.div
-                  whileHover={{ scale: 1.08, rotate: 2 }}
-                  style={{
-                    width: 72, height: 72, borderRadius: '50%',
-                    background: 'linear-gradient(135deg,#2563EB,#14B8A6)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '24px', fontWeight: 800, color: '#ffffff', margin: '0 auto',
-                    boxShadow: '0 0 24px rgba(37,99,235,0.4)',
-                  }}
-                >
-                  {getInitials(p.provider_id?.slice(0, 2).toUpperCase() ?? 'P')}
-                </motion.div>
+                {p.photo_url ? (
+                  <motion.img
+                    src={p.photo_url}
+                    alt={p.name ?? 'Provider'}
+                    whileHover={{ scale: 1.08 }}
+                    style={{
+                      width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', margin: '0 auto',
+                      display: 'block', boxShadow: '0 0 24px rgba(37,99,235,0.4)',
+                    }}
+                  />
+                ) : (
+                  <motion.div
+                    whileHover={{ scale: 1.08, rotate: 2 }}
+                    style={{
+                      width: 72, height: 72, borderRadius: '50%',
+                      background: 'linear-gradient(135deg,#2563EB,#14B8A6)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '24px', fontWeight: 800, color: '#ffffff', margin: '0 auto',
+                      boxShadow: '0 0 24px rgba(37,99,235,0.4)',
+                    }}
+                  >
+                    {getInitials(p.provider_id?.slice(0, 2).toUpperCase() ?? 'P')}
+                  </motion.div>
+                )}
+                {!p.photo_url && (
+                  <p style={{ color: '#fbbf24', fontSize: '11px', marginTop: '8px' }}>No profile photo yet</p>
+                )}
                 <p style={{ color: 'var(--muted)', fontSize: '11px', fontFamily: 'var(--mono)', marginTop: '8px' }}>
                   ID: {p.provider_id}
                 </p>
@@ -439,6 +463,21 @@ export default function ProviderDetail() {
                     }}
                   >
                     <Ban size={16} /> Suspend Provider
+                  </motion.button>
+                )}
+                {p.photo_url && (
+                  <motion.button
+                    onClick={() => setResetOpen(true)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    style={{
+                      width: '100%', padding: '10px', borderRadius: '10px', fontSize: '14px',
+                      fontWeight: 700, cursor: 'pointer', color: 'var(--muted)',
+                      background: 'var(--glass-bg)', border: 'var(--glass-border)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    }}
+                  >
+                    <Camera size={16} /> Reset Profile Photo
                   </motion.button>
                 )}
               </div>
@@ -603,6 +642,17 @@ export default function ProviderDetail() {
           isLoading={actionMutation.isPending}
           onConfirm={() => modal && actionMutation.mutate(modal)}
           onCancel={() => setModal(null)}
+        />
+
+        <ConfirmModal
+          isOpen={resetOpen}
+          title="Reset Profile Photo"
+          message="The worker will have to take a new selfie in the app before they can work again. Customers see this photo at the door."
+          confirmLabel="Reset Photo"
+          confirmStyle="danger"
+          isLoading={resetPhotoMutation.isPending}
+          onConfirm={() => resetPhotoMutation.mutate()}
+          onCancel={() => setResetOpen(false)}
         />
       </DashboardLayout>
     </PageTransition>

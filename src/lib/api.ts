@@ -86,6 +86,16 @@ export const providersApi = {
   suspend: (id: string) => api.patch(`/providers/${id}/suspend`, {}),
   getLocations: () => api.get('/admin/providers/locations'),
   updateBio: (id: string, bio: string) => api.patch(`/admin/providers/${id}/bio`, { bio }),
+  // Clears the locked registration selfie; the worker app makes them take a new one.
+  resetPhoto: (id: string) => api.patch(`/admin/providers/${id}/photo/reset`, {}),
+};
+
+// ── Identity reports (customer tapped "No, someone else" at the door) ──────
+export const identityReportsApi = {
+  // GET /admin/identity-reports → { items, total, open_count }
+  getAll: (params?: Record<string, any>) => api.get('/admin/identity-reports', { params }),
+  resolve: (id: string, data: { status: 'OPEN' | 'ACTION_TAKEN' | 'DISMISSED'; admin_note?: string }) =>
+    api.patch(`/admin/identity-reports/${id}`, data),
 };
 
 // ── Services ────────────────────────────────────────────────────────────────
