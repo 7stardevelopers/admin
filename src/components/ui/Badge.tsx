@@ -10,6 +10,9 @@ const STATUS_MAP: Record<string, { bg: string; color: string; label: string }> =
   REJECTED:    { bg: 'rgba(107,114,128,0.15)',  color: '#9ca3af', label: 'Rejected'    },
   // Payment
   SUCCESS:     { bg: 'rgba(52,211,153,0.12)',   color: '#34d399', label: 'Success'     },
+  PAID:        { bg: 'rgba(52,211,153,0.12)',   color: '#34d399', label: 'Paid'        },
+  PARTIALLY_REFUNDED: { bg: 'rgba(251,146,60,0.10)', color: '#fb923c', label: 'Partly Refunded' },
+  REFUND_FAILED:      { bg: 'rgba(248,113,113,0.12)', color: '#f87171', label: 'Refund Failed' },
   FAILED:      { bg: 'rgba(248,113,113,0.12)',  color: '#f87171', label: 'Failed'      },
   REFUNDED:    { bg: 'rgba(251,146,60,0.12)',   color: '#fb923c', label: 'Refunded'    },
   // Provider

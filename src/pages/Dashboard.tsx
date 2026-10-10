@@ -6,7 +6,7 @@ import { StatsCard } from '@/components/ui/StatsCard';
 import { PageTransition } from '@/components/PageTransition';
 import { StaggerList } from '@/components/effects/StaggerList';
 import { dashboardApi, paymentsApi } from '@/lib/api';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatPaise, fromPaise } from '@/lib/utils';
 import { useVectr } from '@/context/VectrContext';
 import { ShoppingBag, TrendingUp, CheckCircle, XCircle, Clock, DollarSign } from 'lucide-react';
 import type { DashboardStats, Payment } from '@/types';
@@ -14,6 +14,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
+
+// Backend PLATFORM_FEE_PCT default — keep in sync if the environment changes it.
+const PLATFORM_FEE_PCT = 10;
 
 const COLORS = ['#fbbf24', '#60a5fa', '#34d399', '#f87171', '#a78bfa', '#fb923c'];
 
@@ -30,7 +33,7 @@ export default function Dashboard() {
         completed:    raw.completed_bookings,
         pending:      raw.pending_bookings,
         cancelled:    raw.cancelled_bookings,
-        totalRevenue: raw.total_revenue_paise / 100,
+        totalRevenue: Number(raw.total_revenue_paise ?? 0), // paise
       };
     },
   });
@@ -52,9 +55,10 @@ export default function Dashboard() {
     const label = d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric' });
     const dayPayments = payments.filter((p: any) => {
       const pd = new Date((p as any).paid_at ?? (p as any).created_at);
-      return pd.toDateString() === d.toDateString() && p.status === 'SUCCESS';
+      return pd.toDateString() === d.toDateString() && p.status === 'PAID';
     });
-    const revenue = dayPayments.reduce((sum, p) => sum + p.amount, 0);
+    // amounts are paise; chart works in rupees
+    const revenue = fromPaise(dayPayments.reduce((sum, p) => sum + Number(p.amount ?? 0), 0));
     return { label, revenue };
   });
 
@@ -76,7 +80,7 @@ export default function Dashboard() {
     },
     {
       title: 'Total Revenue',
-      value: isLoading ? '…' : formatCurrency(stats?.totalRevenue ?? 0),
+      value: isLoading ? '…' : formatPaise(stats?.totalRevenue ?? 0),
       icon: TrendingUp,
       gradient: 'linear-gradient(135deg,#2563EB,#14B8A6)',
       trend: { value: 8, label: 'vs last month' },
@@ -102,8 +106,8 @@ export default function Dashboard() {
       trend: { value: -3, label: 'vs last month' },
     },
     {
-      title: 'Platform Fee (15%)',
-      value: isLoading ? '…' : formatCurrency((stats?.totalRevenue ?? 0) * 0.15),
+      title: `Platform Fee (${PLATFORM_FEE_PCT}%)`,
+      value: isLoading ? '…' : formatPaise(Math.round((stats?.totalRevenue ?? 0) * PLATFORM_FEE_PCT / 100)),
       icon: DollarSign,
       gradient: 'linear-gradient(135deg,#06b6d4,#0891b2)',
     },

@@ -13,8 +13,10 @@ import { StaggerList } from '@/components/effects/StaggerList';
 import { subscriptionsApi } from '@/lib/api';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import type { SubscriptionPlan } from '@/types';
+import { fromPaise, toPaise } from '@/lib/utils';
 import { Plus, Crown, X, Check, Trash2 } from 'lucide-react';
 
+// price is entered in RUPEES; the API stores/returns PAISE.
 type PlanForm = { name: string; price: number; bookingsIncluded: number; discountPct: number; description?: string };
 
 function CreatePlanModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
@@ -24,7 +26,7 @@ function CreatePlanModal({ onClose, onSuccess }: { onClose: () => void; onSucces
   const mutation = useMutation({
     mutationFn: (d: PlanForm) => subscriptionsApi.createPlan({
       name: d.name,
-      price: Number(d.price),
+      price: toPaise(d.price), // rupees → paise
       bookings_included: Number(d.bookingsIncluded),
       discount_pct: Number(d.discountPct),
       features: d.description ? { description: d.description } : undefined,
@@ -76,7 +78,7 @@ function CreatePlanModal({ onClose, onSuccess }: { onClose: () => void; onSucces
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <FloatingLabel label="Plan Name *" error={errors.name?.message} {...register('name', { required: 'Required' })} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <FloatingLabel type="number" label="Price / Month (₹) *" {...register('price', { required: true, min: 1 })} />
+              <FloatingLabel type="number" label="Price / Month (₹) *" step="0.01" {...register('price', { required: true, min: 1 })} />
               <FloatingLabel type="number" label="Bookings Included *" {...register('bookingsIncluded', { required: true, min: 1 })} />
             </div>
             <FloatingLabel type="number" label="Discount % *" {...register('discountPct', { required: true, min: 0, max: 100 })} />
@@ -164,7 +166,7 @@ function PlanCard({ plan, onToggle, isToggling, onDelete }: {
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
         <span style={{ fontSize: '14px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>₹</span>
         <span style={{ fontSize: '38px', fontWeight: 800, fontFamily: 'var(--mono)', color: 'var(--amber)', lineHeight: 1 }}>
-          <AnimatedCounter value={plan.price} />
+          <AnimatedCounter value={fromPaise(plan.price)} decimals={Number.isInteger(fromPaise(plan.price)) ? 0 : 2} />
         </span>
         <span style={{ fontSize: '12px', color: 'var(--muted)', marginLeft: '4px' }}>/ month</span>
       </div>
@@ -230,7 +232,7 @@ export default function Subscriptions() {
       return (Array.isArray(rows) ? rows : []).map((r: any): SubscriptionPlan => ({
         id: r.plan_id ?? r.id,
         name: r.name,
-        price: r.price,
+        price: Number(r.price ?? 0), // paise
         bookingsIncluded: r.bookings_included ?? r.bookingsIncluded,
         discountPct: r.discount_pct ?? r.discountPct,
         description: r.features?.description ?? r.description,

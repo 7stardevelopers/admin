@@ -10,7 +10,7 @@ import { PageTransition } from '@/components/PageTransition';
 import { ChatTranscriptModal } from '@/components/ChatTranscriptModal';
 import { MessageSquare } from 'lucide-react';
 import { bookingsApi } from '@/lib/api';
-import { formatDateTime, formatCurrency } from '@/lib/utils';
+import { formatDateTime, formatPaise } from '@/lib/utils';
 import type { Booking, BookingStatus } from '@/types';
 import { Search } from 'lucide-react';
 
@@ -89,7 +89,7 @@ export default function Bookings() {
       key: 'amount', header: 'Amount',
       render: (r: any) => (
         <span style={{ fontWeight: 700, color: 'var(--amber)', fontFamily: 'var(--mono)' }}>
-          {formatCurrency(r.total_amount)}
+          {formatPaise(r.total_amount)}
         </span>
       ),
     },

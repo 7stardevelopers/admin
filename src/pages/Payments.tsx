@@ -12,11 +12,18 @@ import { PageTransition } from '@/components/PageTransition';
 import { StaggerList } from '@/components/effects/StaggerList';
 import { ClickSpark } from '@/components/effects/ClickSpark';
 import { paymentsApi } from '@/lib/api';
-import { formatDateTime, formatCurrency } from '@/lib/utils';
-import type { Payment } from '@/types';
+import { formatDateTime, formatPaise, fromPaise, toPaise } from '@/lib/utils';
 import { TrendingUp, CreditCard, RefreshCw, CheckCircle, RotateCcw, Search } from 'lucide-react';
 
-const STATUS_FILTERS = ['', 'SUCCESS', 'FAILED', 'REFUNDED', 'PENDING'];
+const STATUS_FILTERS = ['', 'PAID', 'PENDING', 'FAILED', 'REFUNDED', 'PARTIALLY_REFUNDED', 'REFUND_FAILED'];
+
+// Refunds are only possible on captured payments that still have a refundable
+// balance (booking and subscription payments alike — keyed by payment_id).
+const REFUNDABLE_STATUSES = ['PAID', 'PARTIALLY_REFUNDED', 'REFUND_FAILED'];
+const isRefundable = (r: any) => REFUNDABLE_STATUSES.includes(r.status) && !!r.payment_id;
+/** Remaining refundable balance in paise. */
+const refundableRemaining = (r: any) =>
+  Math.max(0, Number(r?.amount ?? 0) - Number(r?.refund_amount ?? 0));
 
 export default function Payments() {
   const { setMode } = useVectr();
@@ -25,6 +32,9 @@ export default function Payments() {
   const [statusFilter, setStatus]   = useState('');
   const [search, setSearch]         = useState('');
   const [refundModal, setRefundModal] = useState<any | null>(null);
+  const [refundRupees, setRefundRupees] = useState(''); // optional partial amount, in RUPEES
+  const [refundError, setRefundError]   = useState<string | null>(null);
+  const [deductWorker, setDeductWorker] = useState(false); // worker bears the refund (completed jobs only)
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -36,9 +46,31 @@ export default function Payments() {
   });
 
   const refundMutation = useMutation({
-    mutationFn: (bookingId: string) => paymentsApi.refund(bookingId),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['payments'] }); setRefundModal(null); },
+    // amountPaise undefined => backend refunds everything still refundable.
+    mutationFn: ({ paymentId, amountPaise, deduct }: { paymentId: string; amountPaise?: number; deduct: boolean }) =>
+      paymentsApi.refund(paymentId, amountPaise, deduct),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['payments'] }); closeRefund(); },
+    onError: (e: any) => setRefundError(e.response?.data?.message ?? 'Refund failed'),
   });
+
+  const openRefund = (r: any) => { setRefundModal(r); setRefundRupees(''); setRefundError(null); setDeductWorker(false); };
+  const closeRefund = () => { setRefundModal(null); setRefundRupees(''); setRefundError(null); setDeductWorker(false); };
+  const submitRefund = () => {
+    if (!refundModal) return;
+    const remaining = refundableRemaining(refundModal);
+    let amountPaise: number | undefined;
+    if (refundRupees.trim() !== '') {
+      amountPaise = toPaise(refundRupees);
+      if (!(amountPaise > 0)) { setRefundError('Enter a positive amount, or leave blank for a full refund'); return; }
+      if (amountPaise > remaining) { setRefundError(`Amount exceeds refundable balance of ${formatPaise(remaining)}`); return; }
+      if (amountPaise === remaining) amountPaise = undefined; // same as full refund
+    }
+    setRefundError(null);
+    refundMutation.mutate({
+      paymentId: refundModal.payment_id, amountPaise,
+      deduct: deductWorker && refundModal.booking_status === 'COMPLETED',
+    });
+  };
 
   const allPayments: any[] = data?.data?.items ?? [];
   const payments = search
@@ -52,10 +84,11 @@ export default function Payments() {
     : allPayments;
   const totalPages = data?.data?.total ? Math.ceil(data.data.total / 15) : 1;
   const rawStats = data?.data?.stats;
+  // Backend stats are paise; formatted with formatPaise below.
   const stats = rawStats ? {
-    totalRevenue:       rawStats.total_revenue / 100,
-    netRevenue:         (rawStats.total_revenue - rawStats.total_refunded) / 100,
-    totalRefunded:      rawStats.total_refunded / 100,
+    totalRevenue:       Number(rawStats.total_revenue ?? 0),
+    netRevenue:         Number(rawStats.total_revenue ?? 0) - Number(rawStats.total_refunded ?? 0),
+    totalRefunded:      Number(rawStats.total_refunded ?? 0),
     successfulPayments: rawStats.paid_count,
   } : null;
 
@@ -72,7 +105,16 @@ export default function Payments() {
       key: 'booking', header: 'Service',
       render: (r: any) => (
         <div>
-          <p style={{ fontWeight: 600, fontSize: '13px' }}>{r.service_name ?? '—'}</p>
+          <p style={{ fontWeight: 600, fontSize: '13px' }}>
+            {r.purpose === 'SUBSCRIPTION' || (!r.booking_id && !r.service_name)
+              ? 'Subscription'
+              : (r.service_name ?? '—')}
+            {r.booking_id ? (
+              <span style={{ marginLeft: 6, fontSize: '10px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
+                #{String(r.booking_id).slice(-6).toUpperCase()}
+              </span>
+            ) : null}
+          </p>
           <p style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
             {r.customer_name ?? '—'}{r.customer_phone ? ` · ${r.customer_phone}` : ''}
           </p>
@@ -83,9 +125,9 @@ export default function Payments() {
       key: 'amount', header: 'Amount',
       render: (r: any) => (
         <div>
-          <p style={{ fontWeight: 700, color: 'var(--amber)', fontFamily: 'var(--mono)' }}>{formatCurrency(r.amount)}</p>
+          <p style={{ fontWeight: 700, color: 'var(--amber)', fontFamily: 'var(--mono)' }}>{formatPaise(r.amount)}</p>
           {r.refund_amount ? (
-            <p style={{ fontSize: '11px', color: '#f87171', fontFamily: 'var(--mono)' }}>−{formatCurrency(r.refund_amount)} refunded</p>
+            <p style={{ fontSize: '11px', color: '#f87171', fontFamily: 'var(--mono)' }}>−{formatPaise(r.refund_amount)} refunded</p>
           ) : null}
         </div>
       ),
@@ -105,10 +147,10 @@ export default function Payments() {
     },
     {
       key: 'actions', header: '',
-      render: (r: any) => r.status === 'SUCCESS' ? (
+      render: (r: any) => isRefundable(r) ? (
         <ClickSpark color="#f87171">
           <motion.button
-            onClick={(e) => { e.stopPropagation(); setRefundModal(r); }}
+            onClick={(e) => { e.stopPropagation(); openRefund(r); }}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.95 }}
             style={{
@@ -138,9 +180,9 @@ export default function Payments() {
               marginBottom: '24px',
             }}
           >
-            <StatsCard title="Total Revenue"  value={formatCurrency(stats.totalRevenue)}  icon={TrendingUp}  gradient="linear-gradient(135deg,#2563EB,#14B8A6)" />
-            <StatsCard title="Net Revenue"    value={formatCurrency(stats.netRevenue)}    icon={CreditCard}  gradient="linear-gradient(135deg,#10b981,#059669)" />
-            <StatsCard title="Total Refunded" value={formatCurrency(stats.totalRefunded)} icon={RefreshCw}   gradient="linear-gradient(135deg,#ef4444,#dc2626)" />
+            <StatsCard title="Total Revenue"  value={formatPaise(stats.totalRevenue)}  icon={TrendingUp}  gradient="linear-gradient(135deg,#2563EB,#14B8A6)" />
+            <StatsCard title="Net Revenue"    value={formatPaise(stats.netRevenue)}    icon={CreditCard}  gradient="linear-gradient(135deg,#10b981,#059669)" />
+            <StatsCard title="Total Refunded" value={formatPaise(stats.totalRefunded)} icon={RefreshCw}   gradient="linear-gradient(135deg,#ef4444,#dc2626)" />
             <StatsCard title="Successful"     value={stats.successfulPayments}            icon={CheckCircle} gradient="linear-gradient(135deg,#4F46E5,#7C3AED)" />
           </StaggerList>
         )}
@@ -179,7 +221,7 @@ export default function Payments() {
                     }}
                   />
                 )}
-                <span style={{ position: 'relative', zIndex: 1 }}>{s || 'All'}</span>
+                <span style={{ position: 'relative', zIndex: 1 }}>{s ? s.replace(/_/g, ' ') : 'All'}</span>
               </motion.button>
             );
           })}
@@ -202,13 +244,38 @@ export default function Payments() {
         <ConfirmModal
           isOpen={!!refundModal}
           title="Issue Refund"
-          message={`Refund ${formatCurrency(refundModal?.amount ?? 0)} to ${(refundModal as any)?.customer_name ?? 'customer'}? This cannot be undone.`}
-          confirmLabel="Issue Refund"
+          message={`Refund up to ${formatPaise(refundableRemaining(refundModal))} to ${refundModal?.customer_name ?? 'customer'}? This cannot be undone.`}
+          confirmLabel={refundRupees.trim() ? 'Issue Partial Refund' : 'Issue Full Refund'}
           confirmStyle="danger"
           isLoading={refundMutation.isPending}
-          onConfirm={() => refundModal && refundMutation.mutate((refundModal as any).booking_id)}
-          onCancel={() => setRefundModal(null)}
-        />
+          onConfirm={submitRefund}
+          onCancel={closeRefund}
+        >
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--muted)', marginBottom: '6px' }}>
+              Partial amount (₹) — leave blank for full refund
+            </label>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={refundRupees}
+              onChange={(e) => { setRefundRupees(e.target.value); setRefundError(null); }}
+              placeholder={fromPaise(refundableRemaining(refundModal)).toFixed(2)}
+              className="input-base"
+              style={{ padding: '8px 12px', fontSize: '13px', width: '100%' }}
+            />
+            {refundModal?.booking_status === 'COMPLETED' && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', fontSize: '13px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={deductWorker} onChange={(e) => setDeductWorker(e.target.checked)} />
+                Also deduct this amount from the worker's wallet
+              </label>
+            )}
+            {refundError && (
+              <p style={{ marginTop: '8px', fontSize: '12px', color: '#f87171' }}>{refundError}</p>
+            )}
+          </div>
+        </ConfirmModal>
       </DashboardLayout>
     </PageTransition>
   );

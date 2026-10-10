@@ -117,8 +117,10 @@ export const servicesApi = {
 // ── Payments ─────────────────────────────────────────────────────────────────
 export const paymentsApi = {
   getAll: (params?: Record<string, any>) => api.get('/admin/payments', { params }),
-  refund: (bookingId: string, amount?: number) =>
-    api.post('/payments/refund', { booking_id: bookingId, amount }),
+  // amount in paise; omit to refund everything still refundable. Works for booking and plan payments.
+  // deductFromWorker: also take the refunded amount back from the worker's wallet (completed jobs).
+  refund: (paymentId: string, amount?: number, deductFromWorker = false) =>
+    api.post('/payments/refund', { payment_id: paymentId, amount, deduct_from_worker: deductFromWorker }),
 };
 
 // ── Worker payouts (amounts in paise) ────────────────────────────────────────

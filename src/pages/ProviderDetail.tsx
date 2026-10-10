@@ -11,7 +11,7 @@ import { PageTransition } from '@/components/PageTransition';
 import { GlowCard } from '@/components/effects/GlowCard';
 import { AnimatedCounter } from '@/components/effects/AnimatedCounter';
 import { providersApi, documentsApi, callsApi, reviewsApi } from '@/lib/api';
-import { formatDate, formatDateTime, formatCurrency, getInitials } from '@/lib/utils';
+import { formatDate, formatDateTime, formatPaise, getInitials } from '@/lib/utils';
 import { ArrowLeft, CheckCircle, Ban, ShieldCheck, XCircle, Eye, X, Phone, Pencil, Star, Camera } from 'lucide-react';
 
 const DOC_LABELS: Record<string, string> = {
@@ -345,7 +345,7 @@ export default function ProviderDetail() {
     { label: 'Status',       value: <Badge status={p.status} /> },
     { label: 'Experience',   value: p.years_experience ? `${p.years_experience} yrs` : 'Not set' },
     { label: 'Joined',       value: formatDate(p.created_at) },
-    { label: 'Wallet',       value: formatCurrency(p.wallet_balance ?? 0) },
+    { label: 'Wallet',       value: formatPaise(p.wallet_balance ?? 0) },
     { label: 'Availability', value: p.is_available ? '🟢 Online' : '🔴 Offline' },
     { label: 'Acceptance',   value: `${(Number(p.acceptance_rate ?? 1) * 100).toFixed(0)}%` },
   ];
