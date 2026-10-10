@@ -121,6 +121,15 @@ export const paymentsApi = {
     api.post('/payments/refund', { booking_id: bookingId, amount }),
 };
 
+// ── Worker payouts (amounts in paise) ────────────────────────────────────────
+export const payoutsApi = {
+  getAll: (status: string) => api.get('/finance/payouts', { params: { status } }),
+  update: (payoutId: string, status: string, notes?: string) =>
+    api.patch(`/finance/payouts/${payoutId}`, { status, notes }),
+  bulkUpdate: (payoutIds: string[], status: string, notes?: string) =>
+    api.patch('/finance/payouts/bulk', { payout_ids: payoutIds, status, notes }),
+};
+
 // ── Reviews ──────────────────────────────────────────────────────────────────
 export const reviewsApi = {
   getAll: (params?: Record<string, any>) => api.get('/admin/reviews', { params }),

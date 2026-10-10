@@ -27,6 +27,7 @@ import SupportTickets       from '@/pages/SupportTickets';
 import IdentityReports from '@/pages/IdentityReports';
 import SupportTicketDetail  from '@/pages/SupportTicketDetail';
 import CallLogs      from '@/pages/CallLogs';
+import Payouts       from '@/pages/Payouts';
 
 import { VectrProvider, useVectr } from '@/context/VectrContext';
 
@@ -59,6 +60,7 @@ function AnimatedRoutes() {
         <Route path="/providers/:id"   element={<ProviderDetail />} />
         <Route path="/services"        element={<Services />} />
         <Route path="/payments"        element={<Payments />} />
+        <Route path="/payouts"         element={<Payouts />} />
         <Route path="/reviews"         element={<Reviews />} />
         <Route path="/users"           element={<Users />} />
         <Route path="/logs"            element={<Logs />} />

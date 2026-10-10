@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingBag, Users, UserCheck, Wrench,
   CreditCard, Star, Crown, Megaphone, BarChart3, Map,
-  ScrollText, LogOut, ChevronLeft, ChevronRight, Tag, LifeBuoy, PhoneCall, ShieldAlert,
+  ScrollText, LogOut, ChevronLeft, ChevronRight, Tag, LifeBuoy, PhoneCall, ShieldAlert, Banknote,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { to: '/providers',     label: 'Providers',      icon: UserCheck       },
   { to: '/services',      label: 'Services',       icon: Wrench          },
   { to: '/payments',      label: 'Payments',       icon: CreditCard      },
+  { to: '/payouts',       label: 'Worker Payouts', icon: Banknote        },
   { to: '/reviews',       label: 'Reviews',        icon: Star            },
   { to: '/subscriptions', label: 'Subscriptions',  icon: Crown           },
   { to: '/coupons',       label: 'Coupons',        icon: Tag             },
